@@ -1,0 +1,26 @@
+<div class="contextual">
+  <%= link_to l(:button_add), new_person_people_rate_path(@person), class: 'icon icon-add' %>
+</div>
+<h3><%= l(:label_people_rates_history) %></h3>
+
+<% if @person.rates.blank? %>
+  <p class="nodata"><%= l(:label_no_data) %></p>
+<% else %>
+  <div class="autoscroll">
+    <table class="list issues">
+      <thead>
+      <tr>
+        <th><%= l(:field_from_date) %></th>
+        <th><%= l(:field_project) %></th>
+        <th><%= l(:field_rate) %></th>
+        <th></th>
+      </tr>
+      </thead>
+
+      <tbody>
+        <%= render partial: 'people_rates/rates_list', locals: { rates_collector: @rates_collector, type: PeopleRate::COST_RATE } %>
+        <%= render partial: 'people_rates/rates_list', locals: { rates_collector: @rates_collector, type: PeopleRate::BILL_RATE } %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

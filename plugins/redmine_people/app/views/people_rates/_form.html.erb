@@ -1,0 +1,17 @@
+<%= labelled_fields_for :people_rate, @people_rate do |f| %>
+  <p><%= f.select :rate_type, PeopleRate::RATE_TYPES.map { |type| [l("label_people_#{type}"), type] }, required: true %></p>
+  <p>
+    <%= f.text_field :rate, required: true %>
+  </p>
+  <p>
+    <% if Redmine::VERSION.to_s < '3.0' %>
+      <%= f.text_field :from_date, type: :date, required: true %>
+    <% else %>
+      <%= f.date_field :from_date, required: true %>
+    <% end %>
+    <%= calendar_for('people_rate_from_date') %>
+  </p>
+  <p>
+    <%= f.select :project_id, project_tree_options_for_select(Project.all, include_blank: l(:label_project_all), selected: @people_rate.project), required: true %>
+  </p>
+<% end %>
