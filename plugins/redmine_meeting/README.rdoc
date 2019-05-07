@@ -1,0 +1,24 @@
+= redmine_meeting
+
+Calendaring function to schedule meetings much like outlook or gmail or yahoo mail you get the picture
+
+git clone in the plugin directory
+
+then 
+
+bundle install
+
+then 
+
+bundle exec rake redmine:plugins:migrate RAILS_ENV=production
+
+then 
+
+restart your webserver
+
+then add the cron job by running this below
+
+bundle exec whenever -i redmine_meeting -f plugins/redmine_meeting/config/schedule.rb
+
+
+
