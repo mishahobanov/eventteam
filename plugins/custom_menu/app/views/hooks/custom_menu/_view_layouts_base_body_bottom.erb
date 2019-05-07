@@ -1,0 +1,13 @@
+<% if User.current.logged? %>
+  <div id="cm_quick_header_link">
+    <% if Redmine::Plugin.installed?(:magic_my_page) %>
+      <%= link_to '', {controller: :my, action: :page}, class: 'fa fa-home fa-3x' %>
+    <% end %>
+    <% if Redmine::Plugin.installed?(:service_desk) %>
+      <%= link_to '', {controller: :sd_requests, action: :index, q: 'on_me'}, class: 'fa fa-ticket fa-3x' %>
+    <% end %>
+    <% if Redmine::Plugin.installed?(:kpi) %>
+      <%= link_to '', {controller: :kpi, action: :effectiveness}, class: 'fa fa-credit-card fa-3x' %>
+    <% end %>
+  </div>
+<% end %>
