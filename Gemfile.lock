@@ -1,5 +1,6 @@
 GEM
   remote: https://rubygems.org/
+  remote: http://rubygems.org/
   specs:
     actionmailer (4.2.8)
       actionpack (= 4.2.8)
@@ -133,10 +134,11 @@ GEM
     rbpdf-font (1.19.1)
     rdoc (4.3.0)
     redcarpet (3.4.0)
-    redmine_crm (0.0.42)
+    redmine_crm (0.0.43)
       liquid (< 2.6.4)
       rails
     request_store (1.0.5)
+    ri_cal (0.8.8)
     rmagick (3.1.0)
     roadie (3.2.2)
       css_parser (~> 1.4)
@@ -207,6 +209,7 @@ DEPENDENCIES
   redcarpet (~> 3.4.0)
   redmine_crm
   request_store (= 1.0.5)
+  ri_cal
   rmagick (>= 2.14.0)
   roadie (~> 3.2.1)
   roadie-rails (~> 1.1.1)
