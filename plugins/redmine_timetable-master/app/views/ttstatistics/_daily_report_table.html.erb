@@ -1,0 +1,21 @@
+<table class='list'>
+  <tr>
+    <th><%= l(:field_start_time)%></th>
+    <th><%= l(:field_duration) %></th>
+    <th><%= l(:field_project_name) %></th>
+    <th><%= l(:field_issue_subject)%></th>
+    <th><%= l(:field_activity) %></th>
+  </tr>
+  <% @ttevents.each do |ttevent| %>
+    <tr>
+      <td><%= ttevent.start_time.strftime('%H:%M') %></td>
+      <td><%= ttevent.duration %></td>
+      <td><%= ttevent.issue.project.name %></td>
+      <td><%= ttevent.issue.subject %></td>
+      <td><%= TimeEntryActivity.find(ttevent.time_entry.activity_id) %></td>
+    </tr>
+  <% end %>
+</table>
+<p class="other-formats">他の形式にエクスポート:
+  <%= link_to 'CSV', ttstatistics_daily_report_path + '/' + @date.to_date.to_s + '.csv' %>
+</p>

@@ -1,0 +1,24 @@
+language: ruby
+rvm:
+  - 2.3.0
+branches:
+  only:
+    - master
+env:
+  - DB=sqlite REDMINE_VERSION=3.0.3 VERBOSE=yes
+  - DB=mysql REDMINE_VERSION=3.0.3 VERBOSE=yes
+  - DB=mysql REDMINE_VERSION=3.1.0 VERBOSE=yes
+  - DB=mysql REDMINE_VERSION=3.2.0 VERBOSE=yes
+before_script: 
+  - sh -e /etc/init.d/xvfb start
+  - export DISPLAY=:99.0
+script:
+  - export PLUGIN=redmine_timetable
+  - export WORKSPACE=$(pwd)/workspace
+  - export PATH_TO_PLUGIN=$(pwd)
+  - export PATH_TO_REDMINE=$WORKSPACE/redmine
+  - mkdir $WORKSPACE
+  - bash -x ./.travis-init.sh -r || exit 1
+  - bash -x ./.travis-init.sh -i || exit 1
+  - bash -x ./.travis-init.sh -t || exit 1
+  - bash -x ./.travis-init.sh -u || exit 1

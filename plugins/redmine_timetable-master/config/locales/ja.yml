@@ -1,0 +1,45 @@
+ja:
+  timetable: 時間表
+  statistics: 統計情報
+  permission_view_timetable: 時間表を閲覧する
+  permission_edit_timetable: 時間表を編集する
+
+  description_not_sure: 期限不明
+  description_out_of_time: 期限遅れ
+  description_on_time: 期限まで３日以内
+  description_in_time: 期限まで４日以上
+  description_closed: 報告したイベント
+
+  issues: チケット
+  my_issues: まだ予定されていない自分の担当チケット
+  not_assigned_issues: 担当者がいないチケット
+  planned_issues: 予定済みのチケット
+
+  field_is_done: 作業時間を報告してこのイベントをクローズする.
+  field_start_time: 開始日時
+  field_end_time: 終了日時
+  field_project_name: プロジェクト名
+  field_issue_subject: チケット名
+  field_duration: 作業時間
+
+  edit_event: イベントの編集
+  edit_issue: チケットを編集する
+  hours: 時間
+  link_to_destroy: 削除
+  link_to_ttevent_destroy: イベントをカレンダーから削除
+  message_destroy_confirm: イベントをカレンダーから削除しますか？（チケットは削除されません.）
+  notice_link_to_ttevent_destroy: イベントの削除では、チケットは削除されません.
+  success_create_issue_and_ttevent: チケットとイベントを作成しました.
+  success_update_issue_and_ttevent: チケットとイベントを更新しました. 
+  error_something_went_wrong: 保存できませんでした.
+  success_destroy_ttevent: イベントを削除しました.
+
+  notice_unreported_ttevents: "未報告のイベントが%{unreported_ttevents}個あります.
+    (未報告のイベントがありますと、正確な分析ができない可能性があります.)"
+  notice_unreported_ttevents_none: 未報告のイベントはありません.
+
+  notice_unplanned_ttevents: "予定に登録していないチケットが%{unplanned_ttevents}個あります.(予定に登録していないチケットが増えるとあとで大変なことになる可能性があります.)"
+  notice_unplanned_ttevents_none: 予定に登録していないチケットはありません.
+
+  notice_issues_not_assigned: "プロジェクトに誰にもアサインされていないチケットが%{issues_not_assigned}個あります.(誰にもアサインされないままチケットが放置されると、あとでプロジェクトが大変なことになる可能性があります.)"
+  notice_issues_not_assigned_none: あなたのプロジェクトにアサインされていないチケットはありません.
