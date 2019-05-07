@@ -146,7 +146,6 @@ GEM
       roadie (~> 3.1)
     ruby-openid (2.3.0)
     rubyzip (1.2.2)
-    sass (3.4.25)
     selenium-webdriver (2.53.4)
       childprocess (~> 0.5)
       rubyzip (~> 1.0)
@@ -212,7 +211,6 @@ DEPENDENCIES
   roadie (~> 3.2.1)
   roadie-rails (~> 1.1.1)
   ruby-openid (~> 2.3.0)
-  sass (~> 3.4.22)
   selenium-webdriver (~> 2.53.4)
   simplecov (~> 0.9.1)
   sqlite3
