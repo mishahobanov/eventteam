@@ -141,9 +141,9 @@
 			    <%= label_tag("period", l(:label_count)) %><%= text_field_tag "period",5,:maxlength => 2, :size => 3 %>
 		    </div>
 	    </div>
-      
+
       <%
-         if @user['author_id'] == ["1"]
+         if @user['author_id'] = ["1"]
            assigned_visibility = 'visible'
          else
            assigned_visibility = 'hidden'
