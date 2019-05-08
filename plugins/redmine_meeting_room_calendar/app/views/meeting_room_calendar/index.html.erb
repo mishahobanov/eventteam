@@ -143,7 +143,7 @@
 		    </div>
 	    </div>
 
-      <%if @user_is_manager %>
+      <%if @user_is_manager = true %>
            <%= label_tag("assigned_to_id", l(:label_assigne_to), html_options = { :style=> "display:inline-block;" }) %>
            <%= select_tag("assigned_to_id", options_for_select(@assignable_users, @user), html_options = { :style=> "display:inline-block;" }) %>
         <% else %>
