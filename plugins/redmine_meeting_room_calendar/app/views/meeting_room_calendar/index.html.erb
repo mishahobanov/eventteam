@@ -142,7 +142,7 @@
 		    </div>
 	    </div>
 
-      <%if @user['author_id'] == '1' %>
+      <%if @user['author_id'] == "1" %>
            <%= label_tag("assigned_to_id", l(:label_assigne_to), html_options = { :style=> "visibility:#{visible};" }) %>
         <% else %>
            <%= label_tag("assigned_to_id", l(:label_assigne_to), html_options = { :style=> "visibility:#{hidden};" }) %>
