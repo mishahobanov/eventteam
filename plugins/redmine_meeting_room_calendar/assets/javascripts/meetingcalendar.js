@@ -266,10 +266,10 @@
       var isCurrentUserid =function() {
           var current_user_id = $('#author_id').val();
         if (current_user_id == 1){
-          overlapping = true;
+          alert("asdasd");
         }
         else {
-          overlapping = false;
+              alert("2222");
         }
       };
 
