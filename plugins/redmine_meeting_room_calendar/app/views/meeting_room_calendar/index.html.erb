@@ -99,7 +99,7 @@
 
   <!-- Project List -->
     <%
-       if @settings['hide_rooms'] == '1'
+       if @settings['hide_rooms'] == '1' && @user == 1
          rooms_visibility = 'hidden'
        else
          rooms_visibility = 'visible'
@@ -128,7 +128,7 @@
 	        <%= label_tag("start_time", l(:label_start_time)) %><%= select_tag "start_time", options_for_select(@start_time) %><br/>
 	        <%= label_tag("end_time", l(:label_end_time)) %><%= select_tag "end_time", options_for_select(@end_time) %><br/>
         <% end %>
-	   
+
 	    <%if @show_categories=='1' %>
 	        <%= label_tag(:category_id, l(:label_category)) %> <%= select_tag :category_id, options_for_select(@categories) %><br/>
 	    <%end %>
@@ -149,6 +149,7 @@
         <% else %>
          <%= label_tag("assigned_to_id", l(:label_assigne_to), html_options = { :style=> "display:none;" }) %>
          <%= select_tag("assigned_to_id", options_for_select(@assignable_users, @user), html_options = { :style=> "display:none;" }) %>
+
          <%end%>
 
 
