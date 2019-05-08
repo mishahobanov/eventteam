@@ -142,8 +142,8 @@
 	    </div>
 
       <%if @user_is_manager %>
-           <%= label_tag("assigned_to_id", l(:label_assigne_to), html_options = { :style=> "display:none;" }) %>
-           <%= select_tag("assigned_to_id", options_for_select(@assignable_users, @user), html_options = { :style=> "display:none;" }) %>
+           <%= label_tag("assigned_to_id", l(:label_assigne_to), html_options = { :style=> "display:inline-block;" }) %>
+           <%= select_tag("assigned_to_id", options_for_select(@assignable_users, @user), html_options = { :style=> "display:inline-block;" }) %>
         <% else %>
          <%= label_tag("assigned_to_id", l(:label_assigne_to), html_options = { :style=> "display:none;" }) %>
          <%= select_tag("assigned_to_id", options_for_select(@assignable_users, @user), html_options = { :style=> "display:none;" }) %>
