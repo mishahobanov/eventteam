@@ -16,7 +16,9 @@
 	var fieldIdRoom = "<%= @custom_field_id_room %>";
 	var fieldIdStart = "<%= @custom_field_id_start %>";
 	var fieldIdEnd = "<%= @custom_field_id_end %>";
-  var current_user = <%= @current_user%>
+
+
+
 	var pluginName = "meeting_room_calendar";
 	var user_is_manager = <%= @user_is_manager %>;
 	var user_can_add = <%= @user_can_add %>;
@@ -141,7 +143,7 @@
 		    </div>
 	    </div>
 
-      <%if @current_user.has_role? :manager %>
+      <%if @user_is_manager %>
            <%= label_tag("assigned_to_id", l(:label_assigne_to), html_options = { :style=> "display:inline-block;" }) %>
            <%= select_tag("assigned_to_id", options_for_select(@assignable_users, @user), html_options = { :style=> "display:inline-block;" }) %>
         <% else %>

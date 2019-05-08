@@ -240,7 +240,7 @@ class MeetingRoomCalendarController < ApplicationController
       # nothing to do, issue was already deleted (eg. by a parent)
     end
   end
-
+ 
   def check_settings
     if @project_ids == nil || @project_ids.length == 0 || @project_ids[0].to_s == '0' || @project_ids[0].to_s == ''
       return false
