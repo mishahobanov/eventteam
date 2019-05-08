@@ -17,10 +17,10 @@
               log : function() {
               }
           };
-          
+
       start_time_clone = $('#start_time option').clone();
       end_time_clone = $('#end_time option').clone();
-      
+
       /*
       Author: shiju@qburst.com
       Description: get events in json format
@@ -38,7 +38,7 @@
           }
           var project_id = $('#project_id').val();
           var current_date = window.moment();
-          current_date.subtract(14, 'days');    
+          current_date.subtract(14, 'days');
           var today = current_date.format("YYYY-MM-DD");
           //  selected meeting room
           $.ajax({
@@ -92,7 +92,7 @@
               var eventIndexStart = 1;
               var eventIndexEnd = 5;
               if (event[i].custom_fields == undefined) {
-                  continue;   
+                  continue;
               }
               for (var j = 0; j < event[i].custom_fields.length; j++)
               {
@@ -167,7 +167,7 @@
           if (index >= 0) {
               return index + 1;
           }
-          
+
           return 0;
       };
       /*
@@ -178,46 +178,46 @@
           if (allow_overlap == 1) {
 	      return false;
 	  }
-	  
+
           var events = $('#calendar').fullCalendar('clientEvents');
           if (events.length == 0) {
               return false;
           }
-          
+
           var start = eventStart.clone();
           var end = eventEnd.clone();
-          
+
           if (periodtype <= 0 || period <= 0) {
               periodtype = 1;
               period = 1;
           }
-          
+
           var overlapping = false;
-          
+
           if (periodtype = 1 && period > 1) {
               if (end.isAfter(start.clone().add(1, 'days'))) {
                   overlapping = true;
               }
           }
-          
+
           while (period > 0 && !overlapping) {
               if ((start.isoWeekday() == 6 || start.isoWeekday() == 7) && !allow_weekends) {
                   continue;
               }
-              
-              for (i in events) {              
+
+              for (i in events) {
                   if (event_id != 0 && events[i].event_id == event_id) {
                       continue;
                   }
-                  
+
                   if (meeting_room != events[i].meeting_room) {
                       continue;
                   }
-                  
+
                   if (events[i].start == undefined || events[i].end == undefined) {
                       continue;
-                  } 
-                  
+                  }
+
                   // start is the same
                   if (start.isSame(events[i].start, 'minutes')) {
                       overlapping = true;
@@ -234,17 +234,17 @@
                   } else if (end.isBetween(events[i].start, events[i].end, 'minutes')) {
                       overlapping = true;
                   }
-                              
+
                   if (overlapping == true) {
                       break;
                   }
               }
-              
+
               start.add(periodtype, 'days');
               end.add(periodtype, 'days');
               period--;
           }
-          
+
           return overlapping;
       };
       /*
@@ -289,21 +289,21 @@
       Author: shiju@qburst.com
       Description: intialising fullcalendar to render events
       */
-      var loadCalendar = function() {          
+      var loadCalendar = function() {
           var disableDragAndDrop = true;
           if (allow_drag_and_drop == 1)
               disableDragAndDrop = false;
-              
+
           var disableResize = true;
           if (allow_resize == 1)
               disableResize = false;
-        
+
           current_room_index = 0;
           if (!getEventsJSON(0)) {
               console.log('Failed loading Meeting Calendar');
               return;
           }
-          
+
           console.log('Loading Meeting Calendar');
           $('#calendar').fullCalendar({
               lang: current_lang,
@@ -340,7 +340,7 @@
                       full_text = full_text + '<br/><a href="' + baseUrl + '/issues/' + event.event_id + '">' + tracker_name + ' #' + event.event_id + '</a>';
                   }
                   full_text = full_text + '</p>';
-                  
+
                   element.qtip({
                       content : {
                           // Set the text and title fot the tooltip
@@ -388,28 +388,28 @@
                       console.log('User not logged in');
                       return false;
                   }
-                  
+
                   if (!user_can_edit) {
                       console.log('User cannot edit tickets of project');
                       return false;
                   }
-                  
+
                   if (!allowEdit) {
                       console.log('Loading not finished');
                       return false;
                   }
-                  
+
                   if (isPastDay(calEvent.end)) {
                       jAlert(langWarningEditPast, langInfo);
                       return false;
                   }
-                  
+
                   var event_author_id = calEvent.event_author_id;
                   if (!(isCurrentUser(event_author_id, calEvent.assigned_to_id))) {
                       console.log('It is an event created by another user');
                       return false;
-                  }  
-                  
+                  }
+
                   $('input:checkbox').removeAttr('checked');
                   $('#selected_meeting_room').val(calEvent.meeting_room);
                   if ($('#meeting_rooms').val() == 'all' && !hide_rooms) {
@@ -442,20 +442,20 @@
                     $('#delete_meeting').show();
                   } else {
                     $('#delete_meeting').hide();
-                  }  
-                  $('#subject').focus();                
+                  }
+                  $('#subject').focus();
               },
               dayClick : function(date, jsEvent, calEvent) {
                   if ("Anonymous" == $('#user_name').val() || "Anonym" == $('#user_name').val()) {
                       console.log('User not logged in');
                       return false;
                   }
-                  
+
                   if (!user_can_add) {
                       console.log('User cannot add tickets to project');
                       return false;
                   }
-                  
+
                   if (!allowEdit) {
                       console.log('Loading not finished');
                       return false;
@@ -464,8 +464,8 @@
                   if (isPastDay(date)) {
                       jAlert(langWarningCreatePast, langInfo);
                       return false;
-                  } 
-                  
+                  }
+
                   // clear field values
                   $('#event_id').val(0);
                   if ($('#meeting_rooms').val() == 'all' && !hide_rooms) {
@@ -482,7 +482,7 @@
                   $('#end_time').val('');
                   $('input:checkbox').removeAttr('checked');
                   $('#start_time').val(date.format('HH:mm'));
-                  $('#assigned_to_id').val($('#author_id').val());                          
+                  $('#assigned_to_id').val($('#author_id').val());
                   $('#category_id').val(0);
                   $('.saveMeetingModal').dialog({
                       title : langCreateEvent,
@@ -498,7 +498,7 @@
                   $('#recur_div').hide();
                   $('#delete_meeting').hide();
                   $('#subject').focus();
-                  setEndTime();                  
+                  setEndTime();
               },
               eventOverlap: function(stillEvent, movingEvent) {
 		  if (allow_overlap == 1) {
@@ -507,8 +507,8 @@
                   return stillEvent.meeting_room != movingEvent.meeting_room;
               },
               eventDragStart: function( event, jsEvent, ui, view ) {
-                  noQtip = true; 
-                  return true; 
+                  noQtip = true;
+                  return true;
               },
               eventDragStop: function( event, jsEvent, ui, view )
               {
@@ -522,8 +522,8 @@
               },
               eventDrop: quickEditEvent,
               eventResizeStart: function( event, jsEvent, ui, view ) {
-                  noQtip = true; 
-                  return true; 
+                  noQtip = true;
+                  return true;
               },
               eventResizeStop: function( event, jsEvent, ui, view )
               {
@@ -538,7 +538,7 @@
               eventResize: quickEditEvent
           });
       };
-      
+
       $('#recurCheckbox').click(function() {
           showHiderecurdiv();
       });
@@ -551,16 +551,16 @@
               }
               return false;
           }
-          
+
           if ("Anonymous" == $('#user_name').val() || "Anonym" == $('#user_name').val()) {
-              console.log('User not logged in');              
+              console.log('User not logged in');
               if (revertFunc != null) {
                   revertFunc();
               }
               return false;
-          }          
-          
-                  
+          }
+
+
           if (!user_can_edit) {
               console.log('User cannot edit tickets of project');
               if (revertFunc != null) {
@@ -568,7 +568,7 @@
               }
               return false;
           }
-          
+
           if (!(isCurrentUser(event.event_author_id, event.assigned_to_id))) {
               console.log('It is an event created by another user');
               if (revertFunc != null) {
@@ -576,7 +576,7 @@
               }
               return false;
           }
-          
+
           if (!allow_multiple_days && !event.start.isSame(event.end, 'days')) {
               console.log('Multiple day event is forbidden');
               if (revertFunc != null) {
@@ -584,7 +584,7 @@
               }
               return false;
           }
-          
+
 
           if (isPastDay(event.start) || draggedEventIsPastDay) {
               if (revertFunc != null) {
@@ -592,8 +592,8 @@
               }
               jAlert(langWarningEditPast, langInfo);
               return false;
-          } 
-          
+          }
+
           if (isOverlapping(event.event_id, event.meeting_room, event.start, event.end, 0, 0)) {
               console.log('Overlapping');
               if (revertFunc != null) {
@@ -601,7 +601,7 @@
               }
               return false;
           }
-          
+
           console.log('No overlapping');
           console.log('Quick edit - event id ' + event.event_id + ' / ' + event.start.format() + ' - ' + event.end.format());
 
@@ -627,7 +627,7 @@
               periodtype: 0,
               period: 0
           };
-          
+
           $.ajax({
               url: baseUrl + '/' + pluginName + '/update',
               data: ajaxData,
@@ -643,7 +643,7 @@
                   alert(textStatus + ": " + errorThrown);
               }
           });
-          
+
           return true;
       };
 
@@ -726,7 +726,7 @@
           }
           return false;
       };
-      
+
       /*
       Author: shiju@qburst.com
       Description: create/update event
@@ -768,7 +768,7 @@
               jAlert(langWarningWeekend, langInfo);
               return false;
           }
-          
+
           if (allow_multiple_days == 1) {
               date_end = window.moment($('#meeting_end_date').val(), long_date_format);
               if ((date_end.isoWeekday() == 6 || date_end.isoWeekday() == 7) && !(allow_weekends == 1)) {
@@ -776,47 +776,47 @@
                   return false;
               }
           }
-          
-          var start_time = window.moment($('#start_time').val(), 'HH:mm');          
+
+          var start_time = window.moment($('#start_time').val(), 'HH:mm');
           date.hours(start_time.hours());
           date.minutes(start_time.minutes());
-          
+
           var end_time = window.moment($('#end_time').val(), 'HH:mm');
           date_end.hours(end_time.hours());
           date_end.minutes(end_time.minutes());
-          
+
           if (date_end.isBefore(date, 'minutes') || date_end.isSame(date, 'minutes')) {
               jAlert(langWarningUpdatePast, langInfo);
               return false;
-          }       
+          }
 
           if ($('#subject').val() == '') {
               jAlert(langWarningFieldsMandatory, langInfo);
-              return false;              
+              return false;
           }
-          
+
           if (!validate()) {
               jAlert(langInvalidSubject, langInfo);
               return false;
           }
-          
+
           if (isPastDay(date)) {
               jAlert(langWarningUpdatePast, langInfo);
               return false;
           }
-          
+
           var periodtype = 0;
           var period = 0;
           if ($('#recurCheckbox').is(':checked')) {
               periodtype = parseInt($("#periodtype").val());
               period = parseInt($("#period").val());
           }
-          
+
           if (isOverlapping($("#event_id").val(), $('#selected_meeting_room').val(), date, date_end, periodtype, period)) {
               jAlert(langRoomAlreadyBooked, langAlert);
               return false;
           }
-          
+
           console.log('No overlapping');
           $('.saveMeetingModal').dialog('close');
           //setting the variable for update or create as required
@@ -876,8 +876,8 @@
               return false;
           }
       });
-      
-      var localize = function() {          
+
+      var localize = function() {
           //localization
           window.moment.locale(current_lang);
           var weekdays_min = window.moment.weekdaysMin();
@@ -885,12 +885,12 @@
           var weekdays = window.moment.weekdays();
           var months_short = window.moment.monthsShort();
           var months = window.moment.months();
-          
+
           var hide_weekends = $.datepicker.noWeekends;
           if (allow_weekends == 1) {
               hide_weekends = function(date) { return [true, "", ""]; };
           }
-          
+
           var locale_Data = window.moment.localeData();
           if (first_day_of_week == -1) {
             first_day = locale_Data.firstDayOfWeek();
@@ -909,8 +909,8 @@
           } else {
             long_time_format = redmine_time_format;
           }
-          
-          $('#datepicker').datepicker({ 
+
+          $('#datepicker').datepicker({
               inline : false,
               firstDay : first_day,
               dateFormat : long_date_format_datepicker,
@@ -919,14 +919,14 @@
               monthNames : months,
               dayNamesMin : weekdays_min,
               dayNamesShort : weekdays_short,
-              dayNames : weekdays,              
+              dayNames : weekdays,
               beforeShowDay: hide_weekends,
               onSelect : function(dateText, inst) {
                   $('#calendar').fullCalendar('changeView', 'agendaDay');
                   $('#calendar').fullCalendar('gotoDate', $('#datepicker').datepicker("getDate"));
               }
           });
-          
+
           $('#meeting_date').datepicker({
               inline : false,
               firstDay : first_day,
@@ -937,10 +937,10 @@
               dayNamesMin : weekdays_min,
               dayNamesShort : weekdays_short,
               dayNames : weekdays,
-              
+
               beforeShowDay: hide_weekends
           });
-          
+
           $('#meeting_end_date').datepicker({
               inline : false,
               firstDay : first_day,
@@ -953,32 +953,56 @@
               dayNames : weekdays,
               beforeShowDay: hide_weekends
           });
-          
+
           $('#start_time').empty();
           for (var i = 0; i < all_start_times.length; i++) {
-              $('#start_time').append($('<option>', { 
+              $('#start_time').append($('<option>', {
                   value: all_start_times[i],
                   text : window.moment(all_start_times[i], 'HH:mm').format(long_time_format)
               }));
           }
-          
+
           $('#end_time').empty();
           for (var i = 0; i < all_end_times.length; i++) {
-              $('#end_time').append($('<option>', { 
+              $('#end_time').append($('<option>', {
                   value: all_end_times[i],
                   text : window.moment(all_end_times[i], 'HH:mm').format(long_time_format)
               }));
           }
-          
+
           start_time_clone = $('#start_time option').clone();
           end_time_clone = $('#end_time option').clone();
       };
-      
+      var events = [{
+                 id: 1,
+                 title: 'This is a blocked day',
+                 start: 'Wed, 18 Oct 2009 08:00:00 EST',
+                 color:'#fff',// red
+                 blocked: true
+             },
+             {
+                 id: 2,
+                 title: 'This is an available day',
+                 start: 'Thu, 19 Oct 2009 08:00:00 EST',
+                 color: '#07A800', // green
+                 blocked: false
+             }];
+
+$('#Calendar').fullcalendar({
+    events: events,
+    eventClick: function(calEvent, jsEvent, view) {
+        if(calEvent.blocked == true) {// be sure to set a 'blocked' property in your event
+            alert('This time is not available!');
+        } else {
+            $('#newEventDialog').dialog('open');// open a dialog to save new event
+        }
+    }
+});
       localize();
 
       loadCalendar();
       // intial load calendar
-      
+
       localize();
 
-  }); 
+  });

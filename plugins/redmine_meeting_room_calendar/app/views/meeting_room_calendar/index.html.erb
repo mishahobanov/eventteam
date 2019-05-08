@@ -159,6 +159,7 @@
 
 
     <%= submit_tag l(:label_save), :type => 'button',:id=>"save_meeting" %>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<%= submit_tag l(:label_delete), :type => 'button',:id=>"delete_meeting" %>
+
     <%= hidden_field_tag :author_id, @user %>
     <%= hidden_field_tag :user_name, @user_name %>
     <%= hidden_field_tag :event_id, '' %>
