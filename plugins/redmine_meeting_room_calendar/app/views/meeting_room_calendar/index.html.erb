@@ -128,7 +128,7 @@
 	        <%= label_tag("start_time", l(:label_start_time)) %><%= select_tag "start_time", options_for_select(@start_time) %><br/>
 	        <%= label_tag("end_time", l(:label_end_time)) %><%= select_tag "end_time", options_for_select(@end_time) %><br/>
         <% end %>
-	    <%= label_tag(:assigned_to_id, l(:label_assigne_to)) %> <%= select_tag :assigned_to_id, options_for_select(@assignable_users, @user) %><br/>
+	   
 	    <%if @show_categories=='1' %>
 	        <%= label_tag(:category_id, l(:label_category)) %> <%= select_tag :category_id, options_for_select(@categories) %><br/>
 	    <%end %>
