@@ -145,11 +145,11 @@
        if @user['author_id'] == 'admin'
          assigned_visibility = 'hidden'
        else
-         projects_visibility = 'visible'
+         assigned_visibility = 'visible'
        end
     %>
-    <%= label_tag("assigned_to_id", l(:label_assigne_to), html_options = { :style=> "visibility:#{projects_visibility};" }) %>
-  
+    <%= label_tag("assigned_to_id", l(:label_assigne_to), html_options = { :style=> "visibility:#{assigned_visibility};" }) %>
+
 
     <%= submit_tag l(:label_save), :type => 'button',:id=>"save_meeting" %>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<%= submit_tag l(:label_delete), :type => 'button',:id=>"delete_meeting" %>
     <%= hidden_field_tag :author_id, @user %>
