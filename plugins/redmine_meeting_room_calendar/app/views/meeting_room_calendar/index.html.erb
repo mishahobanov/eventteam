@@ -18,7 +18,6 @@
 	var fieldIdEnd = "<%= @custom_field_id_end %>";
 
 	var pluginName = "meeting_room_calendar";
-var current_user.id = <%= @current_user %>;
 	var user_is_manager = <%= @user_is_manager %>;
 	var user_can_add = <%= @user_can_add %>;
 	var user_can_edit = <%= @user_can_edit %>;
@@ -142,7 +141,7 @@ var current_user.id = <%= @current_user %>;
 		    </div>
 	    </div>
 
-      <%if @current_user == '1' %>
+      <%if @user_is_manager %>
            <%= label_tag("assigned_to_id", l(:label_assigne_to), html_options = { :style=> "visibility:#{visible};" }) %>
         <% else %>
            <%= label_tag("assigned_to_id", l(:label_assigne_to), html_options = { :style=> "visibility:#{hidden};" }) %>
