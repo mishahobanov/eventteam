@@ -1,6 +1,6 @@
 # Russian strings go here for Rails i18n
 ru:
-  label_name: "Переговорные"
+  label_name: "Harmonogram"
   label_meeting_date: "Дата"
   label_meeting_end_date: "Конец"
   label_booked_by: "Забронировано"
