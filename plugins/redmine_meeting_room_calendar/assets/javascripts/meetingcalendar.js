@@ -264,14 +264,15 @@
       Description: checking whether the current user is same as the author of event
       */
       var isCurrentUserid =function() {
-        if (user_is_manager == 1){
+          var current_user_id = $('#author_id').val();
+        if (current_user_id == 1){
           overlapping = true;
         }
         else {
           overlapping = false;
         }
       };
-      
+
       var isCurrentUser = function(event_author_id, event_assigned_to_id) {
           var current_user_id = $('#author_id').val();
           if ((event_author_id == current_user_id) || (event_assigned_to_id == current_user_id) || (user_is_manager == 1)) {
