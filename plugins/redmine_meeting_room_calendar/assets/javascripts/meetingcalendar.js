@@ -174,6 +174,10 @@
       Author: shiju@qburst.com
       Description: checking whether event overlaps with exisiting events
       */
+
+      var isCurrentUser = function(){
+        if(user_is_manager == 1){
+
       var isOverlapping = function(event_id, meeting_room, eventStart, eventEnd, periodtype, period) {
           if (allow_overlap == 1) {
 	      return false;
@@ -246,7 +250,84 @@
           }
 
           return overlapping;
-      };
+      }
+    }else {
+      var isOverlapping = function(event_id, meeting_room, eventStart, eventEnd, periodtype, period) {
+          if (allow_overlap == 1) {
+        return false;
+    }
+
+          var events = $('#calendar').fullCalendar('clientEvents');
+          if (events.length == 0) {
+              return false;
+          }
+
+          var start = eventStart.clone();
+          var end = eventEnd.clone();
+
+          if (periodtype <= 0 || period <= 0) {
+              periodtype = 1;
+              period = 1;
+          }
+
+          var overlapping = true;
+
+          if (periodtype = 1 && period > 1) {
+              if (end.isAfter(start.clone().add(1, 'days'))) {
+                  overlapping = false;
+              }
+          }
+
+          while (period > 0 && !overlapping) {
+              if ((start.isoWeekday() == 6 || start.isoWeekday() == 7) && !allow_weekends) {
+                  continue;
+              }
+
+              for (i in events) {
+                  if (event_id != 0 && events[i].event_id == event_id) {
+                      continue;
+                  }
+
+                  if (meeting_room != events[i].meeting_room) {
+                      continue;
+                  }
+
+                  if (events[i].start == undefined || events[i].end == undefined) {
+                      continue;
+                  }
+
+                  // start is the same
+                  if (start.isSame(events[i].start, 'minutes')) {
+                      overlapping = false;
+                  // end is the same
+                  } else if (end.isSame(events[i].end, 'minutes')) {
+                      overlapping = false;
+                  // start is before start and end is after end
+                  } else if (start.isBefore(events[i].start, 'minutes') && end.isAfter(events[i].end, 'minutes')) {
+                      overlapping = false;
+                  // start is between start and end (exclusive)
+                  } else if (start.isBetween(events[i].start, events[i].end, 'minutes')) {
+                      overlapping = false;
+                  // end is between start and end (exclusive)
+                  } else if (end.isBetween(events[i].start, events[i].end, 'minutes')) {
+                      overlapping = false;
+                  }
+
+                  if (overlapping == false) {
+                      break;
+                  }
+              }
+
+              start.add(periodtype, 'days');
+              end.add(periodtype, 'days');
+              period--;
+          }
+
+          return overlapping;
+      }
+
+    }
+  };
       /*
       Author: shiju@qburst.com
       Description: stripping the subject text to fit into the calendar event and tooltip
@@ -263,6 +344,9 @@
       Author: shiju@qburst.com
       Description: checking whether the current user is same as the author of event
       */
+
+
+
       var isCurrentUser = function(event_author_id, event_assigned_to_id) {
           var current_user_id = $('#author_id').val();
           if ((event_author_id == current_user_id) || (event_assigned_to_id == current_user_id) || (user_is_manager == 1)) {
@@ -973,7 +1057,7 @@
           start_time_clone = $('#start_time option').clone();
           end_time_clone = $('#end_time option').clone();
       };
-      
+
       localize();
 
       loadCalendar();
