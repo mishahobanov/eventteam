@@ -95,14 +95,6 @@
     <%= label_tag("label_project", l(:label_project), html_options = { :style=> "visibility:#{projects_visibility};" }) %>
     <%= select_tag("project_id", options_for_select(@projects, @project_id), html_options = { :style=> "visibility:#{projects_visibility};" }) %>
     <!-- Meeting Rooms List -->
-    <%
-       if @user['author_id'] ==['1']
-         assigned_visibility = 'hidden'
-       else
-         assigned_visibility = 'visible'
-       end
-    %>
-    <%= label_tag("assigned_to_id", l(:label_assigne_to), html_options = { :style=> "visibility:#{assigned_visibility};" }) %>
 
   <!-- Project List -->
     <%
