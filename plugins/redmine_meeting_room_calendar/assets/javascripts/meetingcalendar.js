@@ -973,31 +973,7 @@
           start_time_clone = $('#start_time option').clone();
           end_time_clone = $('#end_time option').clone();
       };
-      var events = [{
-                 id: 1,
-                 title: 'This is a blocked day',
-                 start: 'Wed, 18 Oct 2009 08:00:00 EST',
-                 color:'#fff',// red
-                 blocked: true
-             },
-             {
-                 id: 2,
-                 title: 'This is an available day',
-                 start: 'Thu, 19 Oct 2009 08:00:00 EST',
-                 color: '#07A800', // green
-                 blocked: false
-             }];
-
-$('#Calendar').fullcalendar({
-    events: events,
-    eventClick: function(calEvent, jsEvent, view) {
-        if(calEvent.blocked == true) {// be sure to set a 'blocked' property in your event
-            alert('This time is not available!');
-        } else {
-            $('#newEventDialog').dialog('open');// open a dialog to save new event
-        }
-    }
-});
+      
       localize();
 
       loadCalendar();
