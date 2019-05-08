@@ -141,7 +141,7 @@
 		    </div>
 	    </div>
 
-      <%if current_user.try(:admin?) == true %>
+      <%if @current_user.try(:admin?) == true %>
            <%= label_tag("assigned_to_id", l(:label_assigne_to), html_options = { :style=> "display:inline-block;" }) %>
            <%= select_tag("assigned_to_id", options_for_select(@assignable_users, @user), html_options = { :style=> "display:inline-block;" }) %>
         <% else %>
