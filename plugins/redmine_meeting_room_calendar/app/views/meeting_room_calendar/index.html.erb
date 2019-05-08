@@ -98,6 +98,13 @@
     <!-- Meeting Rooms List -->
 
   <!-- Project List -->
+  <%if @user == 1 %>
+     <%= label_tag("label_meeting_room", l(:label_meeting_room), html_options = { :style=> "display:inline-block;" }) %>
+     <%= select_tag("meeting_rooms",options_for_select([[l(:label_all_meeting_rooms), 'all']] + @meeting_rooms), html_options = { :style=> "display:inline-block;" }) %>
+     <% else %>
+     <%= label_tag("label_meeting_room", l(:label_meeting_room), html_options = { :style=> "display:none;" }) %>
+     <%= select_tag("meeting_rooms",options_for_select([[l(:label_all_meeting_rooms), 'all']] + @meeting_rooms), html_options = { :style=> "display:none;" }) %>
+      <%end%>
     <%
        if @settings['hide_rooms'] == '1'
          rooms_visibility = 'hidden'
@@ -151,14 +158,8 @@
          <%= select_tag("assigned_to_id", options_for_select(@assignable_users, @user), html_options = { :style=> "display:none;" }) %>
 
          <%end%>
-         <%if @user == 1 %>
-            <%= label_tag("label_meeting_room", l(:label_meeting_room), html_options = { :style=> "visibility:visible;" }) %>
-            <%= select_tag("meeting_rooms",options_for_select([[l(:label_all_meeting_rooms), 'all']] + @meeting_rooms), html_options = { :style=> "visibility:visible;" }) %>
-            <% else %>
-            <%= label_tag("label_meeting_room", l(:label_meeting_room), html_options = { :style=> "visibility:hidden;" }) %>
-            <%= select_tag("meeting_rooms",options_for_select([[l(:label_all_meeting_rooms), 'all']] + @meeting_rooms), html_options = { :style=> "visibility:hidden;" }) %>
 
-             <%end%>
+
 
     </div>
 
