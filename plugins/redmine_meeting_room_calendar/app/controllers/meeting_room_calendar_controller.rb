@@ -62,6 +62,7 @@ class MeetingRoomCalendarController < ApplicationController
       redirect_to :action => 'missing_config'
       return
     end
+    
     @project_id = @project.id
     @user = User.current.id
     @user_name = User.current.name
