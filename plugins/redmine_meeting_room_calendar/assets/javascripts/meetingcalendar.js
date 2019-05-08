@@ -174,11 +174,7 @@
       Author: shiju@qburst.com
       Description: checking whether event overlaps with exisiting events
       */
-      var isCurrentUser = function(event_author_id, event_assigned_to_id) {
-          var current_user_id = $('#author_id').val();
-          if (user_is_manager == 1) {
-
-     var isOverlapping = function(event_id, meeting_room, eventStart, eventEnd, periodtype, period) {
+      var isOverlapping = function(event_id, meeting_room, eventStart, eventEnd, periodtype, period) {
           if (allow_overlap == 1) {
 	      return false;
 	  }
@@ -251,10 +247,6 @@
 
           return overlapping;
       };
-    }else {
-        overlapping = false;
-
-    }
       /*
       Author: shiju@qburst.com
       Description: stripping the subject text to fit into the calendar event and tooltip
@@ -981,7 +973,7 @@
           start_time_clone = $('#start_time option').clone();
           end_time_clone = $('#end_time option').clone();
       };
-
+      
       localize();
 
       loadCalendar();
