@@ -96,7 +96,7 @@
     <%= select_tag("project_id", options_for_select(@projects, @project_id), html_options = { :style=> "visibility:#{projects_visibility};" }) %>
     <!-- Meeting Rooms List -->
     <%
-       if @user['author_id'] =['1']
+       if @user['author_id'] ==['1']
          assigned_visibility = 'hidden'
        else
          assigned_visibility = 'visible'
