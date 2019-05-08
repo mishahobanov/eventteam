@@ -175,8 +175,8 @@
       Description: checking whether event overlaps with exisiting events
       */
 
-      var isCurrentUser = function(){
-        if(user_is_manager == 1){
+      var isCurrentUserid = function(){
+        if(current_user_id == 1){
 
       var isOverlapping = function(event_id, meeting_room, eventStart, eventEnd, periodtype, period) {
           if (allow_overlap == 1) {
@@ -252,6 +252,10 @@
           return overlapping;
       }
     }else {
+      var isEventBlock = confirm("Вы уже создали событие на этот день по пробуйте другой день");
+
+alert( isEventBlock );
+
       var isOverlapping = function(event_id, meeting_room, eventStart, eventEnd, periodtype, period) {
           if (allow_overlap == 1) {
         return false;
