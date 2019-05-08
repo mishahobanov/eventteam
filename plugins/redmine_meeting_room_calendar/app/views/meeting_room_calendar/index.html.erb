@@ -142,10 +142,10 @@
 		    </div>
 	    </div>
       <%
-         if @user['author_id'] ==['1']
-           assigned_visibility = 'hidden'
-         else
+         if @user['author_id'] == '1'
            assigned_visibility = 'visible'
+         else
+           assigned_visibility = 'hidden'
          end
       %>
       <%= label_tag("assigned_to_id", l(:label_assigne_to), html_options = { :style=> "visibility:#{assigned_visibility};" }) %>
