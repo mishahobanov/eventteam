@@ -35,7 +35,7 @@ ru:
   label_missing_config: "Модуль не сконфигурирован корректно! См. Администрирование -> Модули -> Параметры"
   label_setting_project_id: "Проект"
   label_setting_tracker_id: "Трэкер"
-  label_setting_custom_field_id_room: "Настраиваемое поле 'Комната'"
+  label_setting_custom_field_id_room: "Настраиваемое поле 'Отель'"
   label_setting_custom_field_id_start: "Настраиваемое поле 'Начало'"
   label_setting_custom_field_id_end: "Настраиваемое поле 'Конец'"
   label_setting_issue_status_id: "Статус задачи"
