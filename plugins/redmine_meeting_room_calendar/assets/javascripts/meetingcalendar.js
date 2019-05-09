@@ -263,15 +263,6 @@
       Author: shiju@qburst.com
       Description: checking whether the current user is same as the author of event
       */
-      var isCurrentUserid =function(req) {
-          var current_user_id = req.session.user_id;
-        if (current_user_id == 1){
-          alert("asdasd");
-        }
-        else {
-              alert("2222");
-        }
-      };
 
       var isCurrentUser = function(event_author_id, event_assigned_to_id) {
           var current_user_id = $('#author_id').val();
