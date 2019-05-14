@@ -124,6 +124,8 @@ GEM
       rails-deprecated_sanitizer (>= 1.0.1)
     rails-html-sanitizer (1.0.4)
       loofah (~> 2.2, >= 2.2.2)
+    rails-observers (0.1.5)
+      activemodel (>= 4.0)
     rails_12factor (0.0.3)
       rails_serve_static_assets
       rails_stdout_logging
@@ -211,6 +213,7 @@ DEPENDENCIES
   rails (= 4.2.8)
   rails-dom-testing
   rails-html-sanitizer (>= 1.0.3)
+  rails-observers
   rails_12factor
   rbpdf (~> 1.19.5)
   rdoc (~> 4.3)
