@@ -1,3 +1,0 @@
-<% if @issue.editable? && @issue.safe_attribute?('assigned_to_id') %>
-  <%= javascript_include_tag "assignee_selector", plugin: 'redmine_assignee_selector' %>
-<% end %>

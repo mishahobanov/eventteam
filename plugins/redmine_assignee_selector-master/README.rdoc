@@ -1,3 +1,0 @@
-= redmine_assignee_selector
-
-Description goes here
