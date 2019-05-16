@@ -1,0 +1,62 @@
+<div class="contextual">
+<% if User.current.allowed_to?({ controller: "password_instances", action: "new" },@project) -%>
+      <%= link_to l(:label_password_instance_new), { controller: "password_instances", action: "new" }, class: 'icon icon-add' %>
+<% end -%>
+  <%= link_to l(:label_pt_show_all), "#", onclick:"showPasswordInstanceAllContent()", class: 'icon icon-unlock' %>
+  <%= link_to l(:label_pt_hide_all), "#", onclick:"hidePasswordInstanceAllContent()", class: 'icon icon-lock' %>
+</div>
+
+<h2><%=l(:label_password_instances)%></h2>
+
+
+<%# Register JS Event Listener -%>
+<%= javascript_tag do -%>
+    // Listen to show/hide events
+    $(document).ready(function() {
+
+        $('a.pw-hide').click(togglePasswordInstanceContent);
+        $('a.pw-show').click(togglePasswordInstanceContent);
+
+    });
+<% end -%>
+
+
+<%#= @password_instances %>
+
+<div class="autoscroll">
+  <table class="list pw-table">
+    <thead><tr>
+      <th><%=l(:label_pt_name)%></th>
+      <th><%=l(:field_password_template)%></th>
+      <th><%=l(:label_pt_data) %></th>
+      <th><%=l(:field_updated_on)%></th>
+      <th><%=l(:field_created_on)%></th>
+      <th></th>
+    </tr></thead>
+    <tbody>
+    <% PasswordInstance.password_instance_tree(@password_instances) do |pw_instance, level| %>
+        <tr class="<%= cycle("odd", "even") %> <%= pw_instance.css_classes %> <%= level > 0 ? "idnt idnt-#{level}" : nil %>">
+          <td class="name"><span><%= link_to pw_instance.name, { controller: "password_instances", action:"show", id: pw_instance.id } %></span></td>
+          <td><%= pw_instance.password_template.name %></td>
+          <td width="500px">
+            <%= link_to(l(:button_show), "##{pw_instance.id}", :class => 'icon icon-unlock pw-show') %>
+            <%= link_to(l(:button_hide), "##{pw_instance.id}", :style => 'display:none;', :class => 'icon icon-lock pw-hide') %>
+          </td>
+          <td align="center"><%= format_time(pw_instance.updated_on) %></td>
+          <td align="center"><%= format_time(pw_instance.created_on) %></td>
+          <td class="buttons">
+            <% if User.current.allowed_to?({ controller: "password_instances", action: "edit" },@project) -%>
+                <%= link_to(l(:button_edit), { controller: "password_instances", action:"edit", id: pw_instance.id}, :class => 'icon icon-edit') %>
+            <% end -%>
+            <% if User.current.allowed_to?({ controller: "password_instances", action: "destroy" },@project) -%>
+                <%= link_to(l(:button_delete), { controller: "password_instances", action:"destroy", id: pw_instance.id}, :method => :delete, :class => 'icon icon-del', :confirm => l(:text_pt_instance_destroy_warning,"#{pw_instance.name} (#{pw_instance.password_template.name})")) %>
+            <% end -%>
+          </td>
+        </tr>
+    <% end %>
+    </tbody>
+  </table>
+</div>
+<%=  %>
+
+<% html_title(l(:label_project_plural)) -%>
