@@ -1,0 +1,77 @@
+<div id="rrbs_settings">
+
+
+
+
+<%= labelled_form_for :settings, @rrbs_setting,
+                             :url => {:controller => 'rrbs_settings',
+                             :action => 'edit', :project_id => @project, :tab => 'rrbs_booking',
+                             :setting_id => @rrbs_setting.id}, 
+                             :html => {:id => 'rrbs_booking' } do |f| %>
+
+
+
+  <div class="box tabular">
+    
+    <% tracker_ids = Tracker.all %>
+      <p>
+        <%= label_tag('settings[tracker_id]', l(:label_rrbs_setting_tracker_id)) %>
+        <%= select_tag('settings[tracker_id]', options_for_select(tracker_ids.collect{|c| [c.name, c.id]}, @rrbs_setting['tracker_id'])) %>
+      </p>
+    
+    <%- if Rails::VERSION::MAJOR >= 4 %>
+      <%- custom_fields_issues = CustomField.where(type: 'IssueCustomField') %>
+    <%- else %>
+      <%- custom_fields_issues = CustomField.find(:all, :conditions => "type = 'IssueCustomField'") %>
+    <%- end %>
+      <p>
+        <%= label_tag('settings[custom_field_id_room]', l(:label_rrbs_setting_custom_field_id_room)) %>
+        <%= select_tag('settings[custom_field_id_room]', options_for_select(custom_fields_issues.collect{|c| [c.name, c.id]}, @rrbs_setting['custom_field_id_room'])) %>
+        &nbsp This item must be a Customfield(Issue) Key-value-list.
+      </p>
+      <p>
+        <%= label_tag('settings[custom_field_id_start]', l(:label_rrbs_setting_custom_field_id_start)) %>
+        <%= select_tag('settings[custom_field_id_start]', options_for_select(custom_fields_issues.collect{|c| [c.name, c.id]}, @rrbs_setting['custom_field_id_start'])) %>
+        &nbsp This item must be a Customfield(Issue) List. ex: 09:00 09:15 09:30 (please fill in 0, 9:00 not allowed)
+      </p>
+      <p>
+        <%= label_tag('settings[custom_field_id_end]', l(:label_rrbs_setting_custom_field_id_end)) %>
+        <%= select_tag('settings[custom_field_id_end]', options_for_select(custom_fields_issues.collect{|c| [c.name, c.id]}, @rrbs_setting['custom_field_id_end'])) %>
+        &nbsp This item must be a Customfield(Issue) List. ex: 09:00 09:15 09:30 (please fill in 0, 9:00 not allowed)
+      </p>
+    
+    <% status_ids = IssueStatus.all %>
+      <p>
+        <%= label_tag('settings[issue_status_id_book]', l(:label_rrbs_issue_status_id_book)) %>
+        <%= select_tag('settings[issue_status_id_book]', options_for_select(status_ids.collect{|c| [c.name, c.id]}, @rrbs_setting['issue_status_id_book'])) %>
+      </p>
+      <p>
+        <%= label_tag('settings[issue_status_id_progress]', l(:label_rrbs_issue_status_id_progress)) %>
+        <%= select_tag('settings[issue_status_id_progress]', options_for_select(status_ids.collect{|c| [c.name, c.id]}, @rrbs_setting['issue_status_id_progress'])) %>
+      </p>
+      <p>
+        <%= label_tag('settings[issue_status_id_complete]', l(:label_rrbs_issue_status_id_complete)) %>
+        <%= select_tag('settings[issue_status_id_complete]', options_for_select(status_ids.collect{|c| [c.name, c.id]}, @rrbs_setting['issue_status_id_complete'])) %>
+      </p>
+    
+    <p>
+      <%= label_tag('settings[footer_message]', l(:label_rrbs_footer_message)) %>
+      <%= text_area_tag('settings[footer_message]', @rrbs_setting['footer_message']) %>
+      <br/>
+    </p>
+    
+    
+    <br/>
+    Note:<br/>
+    This plugin uses 'issue', 'tracker', 'status' and workflow function, so customization can be done in the redmine original function.<br>
+  </div>
+
+    <%= submit_tag l(:button_save) %>
+    <% end %>
+
+
+
+
+</div>
+
+

@@ -1,0 +1,38 @@
+# 日本語 for Rails i18n
+ja:
+  label_rrbs_booking: "予約システム"
+  
+  label_rrbs_setting_tracker_id: "トラッカー"
+  label_rrbs_setting_custom_field_id_room: "リソース"
+  label_rrbs_setting_custom_field_id_start: "開始時刻"
+  label_rrbs_setting_custom_field_id_end: "終了時刻"
+  label_rrbs_issue_status_id_book: "予約中のステータス"
+  label_rrbs_issue_status_id_progress: "貸出中のステータス"
+  label_rrbs_issue_status_id_complete: "返却済のステータス"
+  label_rrbs_footer_message: "注意書き"
+  
+  
+  
+  
+  label_rrbs_issueid: "チケットid"
+  label_rrbs_subject: "タイトル"
+  label_rrbs_resource: "リソース"
+  label_rrbs_start_date: "予約日"
+  label_rrbs_start_time: "予約時刻"
+  label_rrbs_end_date: "返却日"
+  label_rrbs_end_time: "返却時刻"
+  label_rrbs_assigned_to: "予約者"
+  label_rrbs_set_status: "ステータス"
+  label_rrbs_save: "送信"
+  label_rrbs_delete: "削除"
+  
+  label_rrbs_update_event: "予約の更新"
+  label_rrbs_create_event: "予約の作成"
+  
+  label_rrbs_status_name_book: "予約 ■"
+  label_rrbs_status_name_progress: "貸出中 ■"
+  label_rrbs_status_name_complete: "完了 ■"
+  label_rrbs_progress_index: "貸出中"
+  label_rrbs_book_index: "予約中"
+  
+  

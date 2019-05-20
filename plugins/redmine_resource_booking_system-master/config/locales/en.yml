@@ -1,0 +1,38 @@
+# English strings go here for Rails i18n
+en:
+  label_rrbs_booking: "Booking"
+  
+  label_rrbs_setting_tracker_id: "Tracker"
+  label_rrbs_setting_custom_field_id_room: "Resource"
+  label_rrbs_setting_custom_field_id_start: "Start time"
+  label_rrbs_setting_custom_field_id_end: "End time"
+  label_rrbs_issue_status_id_book: "Status for booking"
+  label_rrbs_issue_status_id_progress: "Status for progress"
+  label_rrbs_issue_status_id_complete: "Status for complete"
+  label_rrbs_footer_message: "Footer message"
+  
+  
+  
+  
+  label_rrbs_issueid: "Issue id"
+  label_rrbs_subject: "Subject"
+  label_rrbs_resource: "Resource"
+  label_rrbs_start_date: "Book date"
+  label_rrbs_start_time: "Book time"
+  label_rrbs_end_date: "Return date"
+  label_rrbs_end_time: "Return time"
+  label_rrbs_assigned_to: "Assigned_to"
+  label_rrbs_set_status: "Status"
+  label_rrbs_save: "Save"
+  label_rrbs_delete: "Delete"
+  
+  label_rrbs_update_event: "Update booking"
+  label_rrbs_create_event: "Create booking"
+  
+  label_rrbs_status_name_book: "Booking"
+  label_rrbs_status_name_progress: "Progress"
+  label_rrbs_status_name_complete: "Complete"
+  label_rrbs_progress_index: "Status - Progress"
+  label_rrbs_book_index: "Status - Booked"
+  
+  
