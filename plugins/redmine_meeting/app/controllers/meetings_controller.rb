@@ -68,10 +68,10 @@ class MeetingsController < ApplicationController
                            user_id: User.current.id)
 
     if  Redmine::VERSION::MAJOR > 3
-    @meeting.safe_attributes= meeting_params.merge(schedule_params).permit!
+    @meeting.safe_attributes= params[:meeting].merge(schedule_params).permit!
 
       else
-       @meeting.safe_attributes= meeting_params.merge(schedule_params)
+       @meeting.safe_attributes= params[:meeting].merge(schedule_params)
     end
     if @meeting.save
       users = User.where(id: params[:users])
