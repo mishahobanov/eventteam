@@ -1,4 +1,4 @@
-class CreateTable < ActiveRecord::CompatibleLegacyMigration.migration_class
+class CreateMeetingUsers < ActiveRecord::Migration
   def change
     create_table :meeting_users do |t|
 
