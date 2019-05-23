@@ -141,6 +141,9 @@ class Meeting < ActiveRecord::Base
     Meeting.where("end_date IS NOT NULL AND end_date < ? AND status= 'New'", Date.today).update_all(status: 'Completed')
   end
 
+ActionController::Parameters.permit_all_parameters = true
 
+params = ActionController::Parameters.new
+params.permitted?
 
 end
