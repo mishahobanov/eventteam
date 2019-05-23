@@ -106,24 +106,6 @@ class RepositoryTest < ActiveSupport::TestCase
     assert !r.save
   end
 
-  def test_2_repositories_with_same_identifier_in_different_projects_should_be_valid
-    Repository::Subversion.create!(:project_id => 2, :identifier => 'foo', :url => 'file:///foo')
-    r = Repository::Subversion.new(:project_id => 3, :identifier => 'foo', :url => 'file:///bar')
-    assert r.save
-  end
-
-  def test_2_repositories_with_same_identifier_should_not_be_valid
-    Repository::Subversion.create!(:project_id => 3, :identifier => 'foo', :url => 'file:///foo')
-    r = Repository::Subversion.new(:project_id => 3, :identifier => 'foo', :url => 'file:///bar')
-    assert !r.save
-  end
-
-  def test_2_repositories_with_blank_identifier_should_not_be_valid
-    Repository::Subversion.create!(:project_id => 3, :identifier => '', :url => 'file:///foo')
-    r = Repository::Subversion.new(:project_id => 3, :identifier => '', :url => 'file:///bar')
-    assert !r.save
-  end
-
   def test_first_repository_should_be_set_as_default
     repository1 = Repository::Subversion.new(
                       :project => Project.find(3),
@@ -513,5 +495,19 @@ class RepositoryTest < ActiveSupport::TestCase
     # 2 repositories in fixtures
     Repository::Subversion.any_instance.expects(:fetch_changesets).twice.returns(true)
     Repository.fetch_changesets
+  end
+
+  def test_repository_class
+    assert_equal Repository::Subversion, Repository.repository_class('Subversion')
+    assert_equal Repository::Git, Repository.repository_class('Git')
+    assert_nil Repository.factory('Serializer')
+    assert_nil Repository.factory('Query')
+  end
+
+  def test_factory
+    assert_instance_of Repository::Subversion, Repository.factory('Subversion')
+    assert_instance_of Repository::Git, Repository.factory('Git')
+    assert_nil Repository.factory('Serializer')
+    assert_nil Repository.factory('Query')
   end
 end

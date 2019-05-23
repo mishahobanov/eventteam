@@ -28,6 +28,10 @@ class Redmine::WikiFormatting::MarkdownFormatterTest < ActionView::TestCase
     assert @formatter.new("!>[](foo.png)").to_html
   end
 
+  def test_empty_image_should_not_raise_exception
+    assert @formatter.new("![]()").to_html
+  end
+
   # re-using the formatter after getting above error crashes the
   # ruby interpreter. This seems to be related to
   # https://github.com/vmg/redcarpet/issues/318
@@ -64,6 +68,15 @@ STR
     assert_select_in @formatter.new(text).to_html, 'pre code.ruby.syntaxhl' do
       assert_select 'span.keyword', :text => 'def'
     end
+  end
+
+  def test_should_not_allow_invalid_language_for_code_blocks
+    text = <<-STR
+~~~foo
+test
+~~~
+STR
+    assert_equal "<pre>test\n</pre>", @formatter.new(text).to_html
   end
 
   def test_external_links_should_have_external_css_class

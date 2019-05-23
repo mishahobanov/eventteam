@@ -215,6 +215,7 @@ bg:
   error_invalid_csv_file_or_settings: Файлът не е CSV файл или не съответства на зададеното по-долу
   error_can_not_read_import_file: Грешка по време на четене на импортирания файл
   error_attachment_extension_not_allowed: Файлове от тип %{extension} не са позволени
+  error_cannot_reassign_time_entries_to_an_issue_about_to_be_deleted: Употребеното време не може да бъде прехвърлено на задача, която ще бъде изтрита
 
   mail_subject_lost_password: "Вашата парола (%{value})"
   mail_body_lost_password: 'За да смените паролата си, използвайте следния линк:'
@@ -400,7 +401,7 @@ bg:
   setting_file_max_size_displayed: Максимален размер на текстовите файлове, показвани inline
   setting_repository_log_display_limit: Максимален брой на показванете ревизии в лог файла
   setting_openid: Рарешаване на OpenID вход и регистрация
-  setting_password_max_age: Require password change after
+  setting_password_max_age: Изискване за смяна на паролата след
   setting_password_min_length: Минимална дължина на парола
   setting_new_project_user_role_id: Роля, давана на потребител, създаващ проекти, който не е администратор
   setting_default_projects_modules: Активирани модули по подразбиране за нов проект

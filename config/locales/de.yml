@@ -145,7 +145,7 @@ de:
         not_same_project: "gehört nicht zum selben Projekt"
         circular_dependency: "Diese Beziehung würde eine zyklische Abhängigkeit erzeugen"
         cant_link_an_issue_with_a_descendant: "Ein Ticket kann nicht mit einer Ihrer Unteraufgaben verlinkt werden"
-        earlier_than_minimum_start_date: "cannot be earlier than %{date} because of preceding issues"
+        earlier_than_minimum_start_date: "kann wegen eines Vorgängertickets nicht vor %{date} liegen"
 
   actionview_instancetag_blank_option: Bitte auswählen
 
@@ -1160,7 +1160,7 @@ de:
   notice_import_finished_with_errors: ! '%{count} von %{total} Einträgen konnten nicht
     importiert werden.'
   error_invalid_file_encoding: Die Datei ist keine gültige %{encoding} kodierte Datei
-  error_invalid_csv_file_or_settings: Die Dartei ist keine CSV-Datei oder entspricht nicht den Einstellungen unten
+  error_invalid_csv_file_or_settings: Die Datei ist keine CSV-Datei oder entspricht nicht den Einstellungen unten
   error_can_not_read_import_file: Beim Einlesen der Datei ist ein Fehler aufgetreten
   permission_import_issues: Tickets importieren
   label_import_issues: Tickets importieren
@@ -1189,3 +1189,5 @@ de:
   label_any_open_issues: irgendein offenes Ticket
   label_no_open_issues: kein offenes Ticket
   label_default_values_for_new_users: Standardwerte für neue Benutzer
+  error_cannot_reassign_time_entries_to_an_issue_about_to_be_deleted: Spent time cannot
+    be reassigned to an issue that is about to be deleted

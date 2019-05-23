@@ -527,6 +527,15 @@ class TimelogControllerTest < ActionController::TestCase
     assert_equal ["0", "0"], TimeEntry.where(:id => [1, 2]).collect {|i| i.custom_value_for(10).value}
   end
 
+  def test_bulk_update_clear_custom_field
+    field = TimeEntryCustomField.generate!(:field_format => 'string')
+    @request.session[:user_id] = 2
+    post :bulk_update, :ids => [1, 2], :time_entry => { :custom_field_values => {field.id.to_s => '__none__'} }
+
+    assert_response 302
+    assert_equal ["", ""], TimeEntry.where(:id => [1, 2]).collect {|i| i.custom_value_for(field).value}
+  end
+
   def test_post_bulk_update_should_redirect_back_using_the_back_url_parameter
     @request.session[:user_id] = 2
     post :bulk_update, :ids => [1,2], :back_url => '/time_entries'
@@ -568,6 +577,15 @@ class TimelogControllerTest < ActionController::TestCase
     assert_redirected_to :action => 'index', :project_id => 'ecookbook'
     assert_equal I18n.t(:notice_unable_delete_time_entry), flash[:error]
     assert_not_nil TimeEntry.find_by_id(1)
+  end
+
+  def test_destroy_should_redirect_to_referer
+    referer = 'http://test.host/time_entries?utf8=✓&set_filter=1&&f%5B%5D=user_id&op%5Buser_id%5D=%3D&v%5Buser_id%5D%5B%5D=me'
+    @request.env["HTTP_REFERER"] = referer
+    @request.session[:user_id] = 2
+
+    delete :destroy, :id => 1
+    assert_redirected_to referer
   end
 
   def test_index_all_projects

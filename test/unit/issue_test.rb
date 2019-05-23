@@ -319,6 +319,28 @@ class IssueTest < ActiveSupport::TestCase
     assert_equal false, Issue.where(:project_id => 1).first.visible?(user)
   end
 
+  def test_visible_scope_with_custom_non_member_role_having_restricted_permission
+    role = Role.generate!(:permissions => [:view_project])
+    assert Role.non_member.has_permission?(:view_issues)
+    user = User.generate!
+    Member.create!(:principal => Group.non_member, :project_id => 1, :roles => [role])
+
+    issues = Issue.visible(user).to_a
+    assert issues.any?
+    assert_nil issues.detect {|issue| issue.project_id == 1}
+  end
+
+  def test_visible_scope_with_custom_non_member_role_having_extended_permission
+    role = Role.generate!(:permissions => [:view_project, :view_issues])
+    Role.non_member.remove_permission!(:view_issues)
+    user = User.generate!
+    Member.create!(:principal => Group.non_member, :project_id => 1, :roles => [role])
+
+    issues = Issue.visible(user).to_a
+    assert issues.any?
+    assert_not_nil issues.detect {|issue| issue.project_id == 1}
+  end
+
   def test_visible_scope_for_member_with_groups_should_return_assigned_issues
     user = User.find(8)
     assert user.groups.any?
@@ -504,6 +526,18 @@ class IssueTest < ActiveSupport::TestCase
     assert_equal version, issue.fixed_version
   end
 
+  def test_default_assigned_to_with_required_assignee_should_validate
+    category = IssueCategory.create!(:project_id => 1, :name => 'With default assignee', :assigned_to_id => 3)
+    Issue.any_instance.stubs(:required_attribute_names).returns(['assigned_to_id'])
+
+    issue = Issue.new(:project_id => 1, :tracker_id => 1, :author_id => 1, :subject => 'Default')
+    assert !issue.save
+    assert issue.errors['assigned_to_id'].present?
+
+    issue = Issue.new(:project_id => 1, :tracker_id => 1, :author_id => 1, :subject => 'Default', :category_id => category.id)
+    assert_save issue
+  end
+
   def test_should_not_update_custom_fields_on_changing_tracker_with_different_custom_fields
     issue = Issue.create!(:project_id => 1, :tracker_id => 1, :author_id => 1,
                           :status_id => 1, :subject => 'Test',
@@ -675,7 +709,7 @@ class IssueTest < ActiveSupport::TestCase
     user = User.find(2)
     group = Group.generate!
     group.users << user
- 
+
     issue = Issue.generate!(:author_id => 1, :assigned_to => group)
     assert_include 4, issue.new_statuses_allowed_to(user).map(&:id)
   end
@@ -1246,6 +1280,16 @@ class IssueTest < ActiveSupport::TestCase
     end
   end
 
+  def test_copy_should_clear_closed_on
+    copied_open = Issue.find(8).copy(:status_id => 1)
+    assert copied_open.save
+    assert_nil copied_open.closed_on
+
+    copied_closed = Issue.find(8).copy
+    assert copied_closed.save
+    assert_not_nil copied_closed.closed_on
+  end
+
   def test_should_not_call_after_project_change_on_creation
     issue = Issue.new(:project_id => 1, :tracker_id => 1, :status_id => 1,
                       :subject => 'Test', :author_id => 1)
@@ -1467,7 +1511,7 @@ class IssueTest < ActiveSupport::TestCase
     issue.reload
     assert_equal 2, issue.project_id
     # Cleared fixed_version
-    assert_equal nil, issue.fixed_version
+    assert_nil issue.fixed_version
   end
 
   def test_move_to_another_project_should_keep_fixed_version_when_shared_with_the_target_project
@@ -1489,7 +1533,7 @@ class IssueTest < ActiveSupport::TestCase
     issue.reload
     assert_equal 5, issue.project_id
     # Cleared fixed_version
-    assert_equal nil, issue.fixed_version
+    assert_nil issue.fixed_version
   end
 
   def test_move_to_another_project_should_keep_fixed_version_when_shared_systemwide

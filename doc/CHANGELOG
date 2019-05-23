@@ -1,8 +1,151 @@
 == Redmine changelog
 
 Redmine - project management software
-Copyright (C) 2006-2016  Jean-Philippe Lang
+Copyright (C) 2006-2017  Jean-Philippe Lang
 http://www.redmine.org/
+
+== 2017-10-15 v3.2.8
+
+=== [Security]
+
+* Defect #27186: XSS vulnerabilities
+
+== 2017-07-02 v3.2.7
+
+=== [Accounts / authentication]
+
+* Patch #25653: Fix NoMethodError on HEAD requests to AccountController#register
+
+=== [Code cleanup/refactoring]
+
+* Defect #26055: Three issues with Redmine::SyntaxHighlighting::CodeRay.language_supported?
+
+=== [Gems support]
+
+* Defect #25829: mysql2 0.3 gem doesn't properly close connections
+
+=== [Importers]
+
+* Patch #25861: CSV Importer - handle UndefinedConversionErrors
+
+=== [Issues]
+
+* Defect #26072: Set default assignee before validation
+
+=== [Issues filter]
+
+* Defect #25212: User profile should link to issues assigned to user or his groups
+
+=== [Security]
+
+* Defect #26183: Use Nokogiri 1.7.2
+
+=== [Text formatting]
+
+* Defect #25634: Highlight language aliases are no more supported
+
+=== [Translations]
+
+* Patch #26263: Simplified Chinese translation for 3.2-stable
+
+=== [UI]
+
+* Defect #25760: Clicking custom field label should not check the first option
+
+=== [UI - Responsive]
+
+* Patch #25745: Optimize Gantt Charts for mobile screens
+
+== 2017-04-09 v3.2.6
+
+* Defect #22335: Images with non-ASCII file names are not shown in PDF
+* Defect #24271: htmlentities warning
+* Defect #24869: Circular inclusion detected when including a wiki page with the same name
+* Defect #24875: Issues API does not respect time_entries_visibility
+* Defect #24999: Mercurial 4.1 compatibility
+* Defect #25371: Git 2.9 compatibility
+* Defect #25478: Related to "no open issues" shows all issues
+* Patch #20661: Show visible spent time link for users allowed to view time entries.
+* Patch #24824: Traditional Chinese translation (to r16179)
+* Patch #24886: Japanese translation for 3.2-stable
+* Patch #24949: Bulgarian translation for 3.2-stable
+* Patch #25458: Portuguese translation for 3.2-stable
+* Patch #25505: Russian translation for 3.2-stable
+* Patch #25526: Revert API change in spent_hours field in issue#show
+* Defect #23793: Information leak when rendering of Wiki links
+* Defect #23803: Information leak when rendering Time Entry activities
+* Defect #24199: Stored XSS with SVG attachments
+* Defect #24307: Redmine.pm doesn't check that the repository module is enabled on project
+* Defect #24416: Use redirect to prevent password reset tokens in referers
+* Defect #25503: Improper markup sanitization in user content
+
+== 2017-01-07 v3.2.5
+
+* Defect #14658: Wrong activity timezone on user page
+* Defect #22034: Locked users disappear from project settings
+* Defect #24092: bundler error: selenium-webdriver requires Ruby version >= 2.0.
+* Defect #24156: Redmine might create many AnonymousUser and AnonymousGroup entries
+* Defect #24297: Show action not allowed for time entries in closed projects
+* Defect #24348: acts_as_versioned use old style (Rails 2.x) of method call for #all
+* Defect #24646: X-Sendfile is missing in response headers
+* Defect #24693: Spent time on subtasks should also be reassigned when deleting an issue
+* Defect #24718: Prevent from reassigning spent time to an issue that is going to be deleted
+* Defect #24722: Error when trying to reassign spent time when deleting issues from different projects
+* Patch #24283: Validate length of string fields
+* Patch #24296: Add tablename to siblings query to prevent AmbiguousColumn errors
+
+== 2016-10-10 v3.2.4
+
+* Defect #23067: Custom field List Link values to URL breaks on entries with spaces
+* Defect #23655: Restricted permissions for non member/anonymous on a given project not working
+* Defect #23839: "Invalid query" (Error 500) message with MS SQL when displaying an issue from a list grouped and sorted by fixed version
+* Defect #23841: Custom field URL spaces not decoded properly
+* Defect #22123: Totals cannot be removed completely if some columns are set in the global settings
+* Defect #23054: Clearing time entry custom fields while bulk editing results in values set to __none__
+* Defect #23206: Wrong filters are applied when exporting issues to CSV with blank filter
+* Defect #23246: Saving an empty Markdown image tag in Wiki pages causes internal server error
+* Defect #23829: Wrong allow-override example in rdm-mailhandler.rb
+* Patch #23117: Traditional Chinese textile and markdown help translation
+* Patch #23387: Traditional Chinese textile and markdown detailed help translation (to r15723)
+* Patch #23764: closed_on field of copied issue is always set to source issue's value
+* Patch #22988: Czech translation for 3.2-stable
+* Patch #23269: Fix for Error: Unable to autoload constant Redmine::Version when accessing the time report in first request
+* Patch #23278: When creating issues by receiving an email, watchers created via CC in the mail don't get an email notification
+* Patch #23374: Traditional Chinese translation for 3.2-stable
+* Patch #23389: Print Styles get overriden by responsive media query
+* Patch #23708: Too long words in subtasks break layout
+* Patch #23737: Russian translation for 3.2-stable
+* Patch #23883: iOS 10 ignore disabled Zoom
+
+== 2016-06-05 v3.2.3
+
+* Defect #22808: Malformed SQL query with SQLServer when grouping and sorting by fixed version
+* Defect #22912: Selecting a new filter on Activities should not reset the date range
+* Defect #22924: Persistent XSS in Markdown parsing
+* Defect #22925: Persistent XSS in project homepage field
+* Defect #22926: Persistent XSS in Textile parsing
+* Defect #22932: "Group by" row from issues listing has the colspan attribute bigger with one than the number of columns from the table
+* Patch #22427: pt-BR translation for 3.2.stable
+* Patch #22761: Korean translation for 3.2-stable
+* Patch #22898: !>image.png! generates invalid HTML
+* Patch #22911: Error raised when importing issue with Key/Value List custom field
+
+== 2016-05-05 v3.2.2
+
+* Defect #5156: Bulk edit form lacks estimated time field
+* Defect #22105: Responsive layout. Change menu selector in responsive.js.
+* Defect #22134: HTML markup discrepancy ol and ul at app/views/imports/show.html.erb
+* Defect #22196: Improve positioning of issue history and changesets on small screens
+* Defect #22305: Highlighting of required and read-only custom fields broken in Workflow editor
+* Defect #22331: bundler error: Ruby 1.9.3 = "mime-types-data requires Ruby version >= 2.0."
+* Defect #22342: When copying issues to a different project, subtasks /w custom fields not copied over
+* Defect #22354: Sort criteria defined in custom queries are not applied when exporting to CSV
+* Defect #22583: CSV import delimiter detection broken
+* Patch #22278: Revision Graph and Table should work with vertical-align: middle
+* Patch #22296: Add collision option to autocomplete initialization
+* Patch #22319: Fix German "error_invalid_csv_file_or_settings" typo
+* Patch #22336: Revision Table does not scroll horizontally on small screens
+* Patch #22721: Check that the file is actually an image before generating the thumbnail
 
 == 2016-03-13 v3.2.1
 
@@ -307,28 +450,6 @@ http://www.redmine.org/
 * Feature #19437: Upgrade to Rails 4.2.1
 * Feature #19489: Translation for Spanish Panama
 * Patch #19570: Spanish translation updated
-
-== 2015-03-16 v3.0.1
-
-* Defect #19197: Missing notification if assignee was a group
-* Defect #19260: Non-default identifier-less git repositories are undeletable
-* Defect #19305: settings: incompatible character encodings: UTF-8 and ASCII-8BIT: yaml generated on ruby 1.8
-* Defect #19313: Attached inline images with non-ascii file name can not be seen when text formatting is Makdown
-* Defect #19348: Project name is missing for versions from sub-projects
-* Defect #19381: Wrong syntax for wiki macros in wiki_syntax_detailed.html
-* Defect #19172: "gem update bundler" suggestion for "`x64_mingw` is not a valid platform"
-* Defect #19218: Wrong name for pt-BR in language drop-down
-* Defect #19225: When deleting one item from multivalued custom field / list of users, name of removed user is not visible in history
-* Defect #19232: IMAP STARTTLS options typo :tls
-* Defect #19253: Repository users broken if only one committer exists
-* Defect #19316: CustomField#possible_values may raise undefined method `force_encoding' error
-* Defect #19320: Spent time (last 7 days) in My page not updated
-* Defect #19323: Incorrect links generated in emails if host setup uses other port (":" symbol)
-* Defect #19325: ActionController::UnknownFormat: error for PDF request and unknown user
-* Defect #19354: Unexpected milliseconds in JSON time attributes
-* Defect #19368: Creating an issue without tracker_id attribute ignores custom field values
-* Patch #19233: Change 20150113213922_remove_users_mail.rb from Irreversible to Reversible
-* Patch #19322: Allow to ignore auto reply messages from Exchange server
 
 == 2015-03-16 v3.0.1
 

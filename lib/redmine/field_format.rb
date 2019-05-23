@@ -15,6 +15,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+require 'uri'
+
 module Redmine
   module FieldFormat
     def self.add(name, klass)
@@ -48,6 +50,7 @@ module Redmine
     class Base
       include Singleton
       include Redmine::I18n
+      include Redmine::Helpers::URL
       include ERB::Util
 
       class_attribute :format_name
@@ -149,7 +152,12 @@ module Redmine
       # Returns the validation errors for custom_field
       # Should return an empty array if custom_field is valid
       def validate_custom_field(custom_field)
-        []
+        errors = []
+        pattern = custom_field.url_pattern
+        if pattern.present? && !uri_with_safe_scheme?(url_pattern_without_tokens(pattern))
+          errors << [:url_pattern, :invalid]
+        end
+        errors
       end
 
       # Returns the validation error messages for custom_value
@@ -178,7 +186,7 @@ module Redmine
             url = url_from_pattern(custom_field, single_value, customized)
             [text, url]
           end
-          links = texts_and_urls.sort_by(&:first).map {|text, url| view.link_to text, url}
+          links = texts_and_urls.sort_by(&:first).map {|text, url| view.link_to_if uri_with_safe_scheme?(url), text, url}
           links.join(', ').html_safe
         else
           casted
@@ -194,21 +202,28 @@ module Redmine
       # %m1%, %m2%... => capture groups matches of the custom field regexp if defined
       def url_from_pattern(custom_field, value, customized)
         url = custom_field.url_pattern.to_s.dup
-        url.gsub!('%value%') {value.to_s}
-        url.gsub!('%id%') {customized.id.to_s}
-        url.gsub!('%project_id%') {(customized.respond_to?(:project) ? customized.project.try(:id) : nil).to_s}
-        url.gsub!('%project_identifier%') {(customized.respond_to?(:project) ? customized.project.try(:identifier) : nil).to_s}
+        url.gsub!('%value%') {URI.encode value.to_s}
+        url.gsub!('%id%') {URI.encode customized.id.to_s}
+        url.gsub!('%project_id%') {URI.encode (customized.respond_to?(:project) ? customized.project.try(:id) : nil).to_s}
+        url.gsub!('%project_identifier%') {URI.encode (customized.respond_to?(:project) ? customized.project.try(:identifier) : nil).to_s}
         if custom_field.regexp.present?
           url.gsub!(%r{%m(\d+)%}) do
             m = $1.to_i
             if matches ||= value.to_s.match(Regexp.new(custom_field.regexp))
-              matches[m].to_s
+              URI.encode matches[m].to_s
             end
           end
         end
         url
       end
       protected :url_from_pattern
+
+      # Returns the URL pattern with substitution tokens removed,
+      # for validation purpose
+      def url_pattern_without_tokens(url_pattern)
+        url_pattern.to_s.gsub(/%(value|id|project_id|project_identifier|m\d+)%/, '')
+      end
+      protected :url_pattern_without_tokens
 
       def edit_tag(view, tag_id, tag_name, custom_value, options={})
         view.text_field_tag(tag_name, custom_value.value, options.merge(:id => tag_id))
@@ -543,13 +558,11 @@ module Redmine
         opts.each do |label, value|
           value ||= label
           checked = (custom_value.value.is_a?(Array) && custom_value.value.include?(value)) || custom_value.value.to_s == value
-          tag = view.send(tag_method, tag_name, value, checked, :id => tag_id)
-          # set the id on the first tag only
-          tag_id = nil
+          tag = view.send(tag_method, tag_name, value, checked, :id => nil)
           s << view.content_tag('label', tag + ' ' + label) 
         end
         if custom_value.custom_field.multiple?
-          s << view.hidden_field_tag(tag_name, '')
+          s << view.hidden_field_tag(tag_name, '', :id => nil)
         end
         css = "#{options[:class]} check_box_group"
         view.content_tag('span', s, options.merge(:class => css))
@@ -715,7 +728,7 @@ module Redmine
       end
 
       def value_from_keyword(custom_field, keyword, object)
-        value = custom_field.enumerations.where("LOWER(name) LIKE LOWER(?)", keyword)
+        value = custom_field.enumerations.where("LOWER(name) LIKE LOWER(?)", keyword).first
         value ? value.id : nil
       end
     end

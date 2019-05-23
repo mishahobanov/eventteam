@@ -89,6 +89,7 @@ module QueriesHelper
     query.available_totalable_columns.each do |column|
       tags << content_tag('label', check_box_tag('t[]', column.name.to_s, query.totalable_columns.include?(column), :id => nil) + " #{column.caption}", :class => 'inline')
     end
+    tags << hidden_field_tag('t[]', '')
     tags
   end
 
@@ -128,7 +129,8 @@ module QueriesHelper
   def column_content(column, issue)
     value = column.value_object(issue)
     if value.is_a?(Array)
-      value.collect {|v| column_value(column, issue, v)}.compact.join(', ').html_safe
+      values = value.collect {|v| column_value(column, issue, v)}.compact
+      safe_join(values, ', ')
     else
       column_value(column, issue, value)
     end
@@ -256,6 +258,8 @@ module QueriesHelper
           tags << hidden_field_tag("v[#{field}][]", value, :id => nil)
         end
       end
+    else
+      tags << hidden_field_tag("f[]", "", :id => nil)
     end
     if query.column_names.present?
       query.column_names.each do |name|
