@@ -68,10 +68,7 @@ class MeetingsController < ApplicationController
                                user_id: User.current.id)
                                
                                if  Redmine::VERSION::MAJOR > 3
-                                   @meeting.safe_attributes= params[:meeting].merge(params[:schedule]).permit!
-                                   
-                                   else
-                                   @meeting.safe_attributes= params[:meeting].merge(params[:schedule])
+                                  params.require(:meeting).permit(:subject,:location,:location_online,:project_id,:user_id,:recurring_type,:days_recurring,:weekly_recurring,:monthly_recurring,:end_time,:start_time,:status,:date,:end_date,:agenda,:custom_field_values,:meeting_minutes)
                                end
                                if @meeting.save
                                    users = User.where(id: params[:users])
@@ -110,9 +107,7 @@ class MeetingsController < ApplicationController
     
     def update
         if  Redmine::VERSION::MAJOR > 3
-            @meeting.safe_attributes= params[:meeting].merge(params[:schedule]).permit!
-            else
-            @meeting.safe_attributes= params[:meeting].merge(params[:schedule])
+            params.require(:meeting).permit(:subject,:location,:location_online,:project_id,:user_id,:recurring_type,:days_recurring,:weekly_recurring,:monthly_recurring,:end_time,:start_time,:status,:date,:end_date,:agenda,:custom_field_values,:meeting_minutes)
         end
         
         if @meeting.save
@@ -189,7 +184,7 @@ class MeetingsController < ApplicationController
         end
     end
     def meeting_perms
-        params.require(:meeting).permit(:subject,:location,:location_online,:project_id,:user_id,:recurring_type,:days_recurring,:weekly_recurring,:monthly_recurring,:end_time,:start_time,:status,:date,:end_date,:agenda,:custom_field_values,:meeting_minutes)
+        
     end
     def get_meeting
         @meeting = Meeting.find(params[:id])
