@@ -1,22 +1,3 @@
-Skip to content
-
-Search or jump to…
-
-Pull requests
-Issues
-Marketplace
-Explore
-
-@mishamashina
-1
-0 2 archonwang/redmine_meeting-1
-forked from MicroHealthLLC/redmine_meeting
-Code  Pull requests 0  Projects 0  Wiki  Insights
-redmine_meeting-1/app/controllers/meetings_controller.rb
-@bilel-kedidi bilel-kedidi compatibility with redmine 2.x
-d670964 on 27 Oct 2016
-198 lines (168 sloc)  5.73 KB
-
 class MeetingsController < ApplicationController
     unloadable
     
@@ -214,15 +195,3 @@ class MeetingsController < ApplicationController
         render_404
     end
 end
-© 2019 GitHub, Inc.
-Terms
-Privacy
-Security
-Status
-Help
-Contact GitHub
-Pricing
-API
-Training
-Blog
-About
