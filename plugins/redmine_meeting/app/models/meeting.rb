@@ -55,27 +55,7 @@ class Meeting < ActiveRecord::Base
   def due_date
     date
   end
-def meeting_perms
-    params.require(:meeting).permit(:subject,
-                                    :location,
-                                    :location_online,
-                                    :project_id,
-                                    :user_id,
-                                    :recurring_type,
-                                    :days_recurring,
-                                    :weekly_recurring,
-                                    :monthly_recurring,
-                                    :end_time,
-                                    :start_time,
-                                    :status,
-                                    :date,
-                                    :end_date,
-                                    :agenda,
-                                    :custom_field_values,
-                                    :meeting_minutes)
-                                    
-                                    
-end
+
   def start_date
     date
   end
