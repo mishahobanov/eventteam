@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -32,12 +32,6 @@ class IssueImportTest < ActiveSupport::TestCase
            :custom_fields_projects,
            :custom_fields_trackers
 
-  include Redmine::I18n
-
-  def setup
-    set_language_if_valid 'en'
-  end
-
   def test_create_versions_should_create_missing_versions
     import = generate_import_with_mapping
     import.mapping.merge!('fixed_version' => '9', 'create_versions' => '1')
@@ -64,46 +58,6 @@ class IssueImportTest < ActiveSupport::TestCase
     assert_equal 'New category', category.name
   end
 
-  def test_mapping_with_fixed_tracker
-    import = generate_import_with_mapping
-    import.mapping.merge!('tracker' => 'value:2')
-    import.save!
-
-    issues = new_records(Issue, 3) { import.run }
-    assert_equal [2], issues.map(&:tracker_id).uniq
-  end
-
-  def test_mapping_with_mapped_tracker
-    import = generate_import_with_mapping
-    import.mapping.merge!('tracker' => '13')
-    import.save!
-
-    issues = new_records(Issue, 3) { import.run }
-    assert_equal [1, 2, 1], issues.map(&:tracker_id)
-  end
-
-  def test_should_not_import_with_default_tracker_when_tracker_is_invalid
-    Tracker.find_by_name('Feature request').update!(:name => 'Feature')
-
-    import = generate_import_with_mapping
-    import.mapping.merge!('tracker' => '13')
-    import.save!
-    import.run
-
-    assert_equal 1, import.unsaved_items.count
-    item = import.unsaved_items.first
-    assert_include "Tracker cannot be blank", item.message
-  end
-
-  def test_status_should_be_set
-    import = generate_import_with_mapping
-    import.mapping.merge!('status' => '14')
-    import.save!
-
-    issues = new_records(Issue, 3) { import.run }
-    assert_equal ['New', 'New', 'Assigned'], issues.map(&:status).map(&:name)
-  end
-
   def test_parent_should_be_set
     import = generate_import_with_mapping
     import.mapping.merge!('parent_issue_id' => '5')
@@ -113,19 +67,6 @@ class IssueImportTest < ActiveSupport::TestCase
     assert_nil issues[0].parent
     assert_equal issues[0].id, issues[1].parent_id
     assert_equal 2, issues[2].parent_id
-  end
-
-  def test_backward_and_forward_reference_to_parent_should_work
-    import = generate_import('import_subtasks.csv')
-    import.settings = {
-      'separator' => ";", 'wrapper' => '"', 'encoding' => "UTF-8",
-      'mapping' => {'project_id' => '1', 'tracker' => '1', 'subject' => '2', 'parent_issue_id' => '3'}
-    }
-    import.save!
-
-    root, child1, grandchild, child2 = new_records(Issue, 4) { import.run }
-    assert_equal root, child1.parent
-    assert_equal child2, grandchild.parent
   end
 
   def test_assignee_should_be_set
@@ -160,7 +101,7 @@ class IssueImportTest < ActiveSupport::TestCase
     field = IssueCustomField.generate!(:field_format => 'date', :is_for_all => true, :trackers => Tracker.all)
     import = generate_import_with_mapping('import_dates.csv')
     import.settings.merge!('date_format' => Import::DATE_FORMATS[1])
-    import.mapping.merge!('tracker' => 'value:1', 'subject' => '0', 'start_date' => '1', 'due_date' => '2', "cf_#{field.id}" => '3')
+    import.mapping.merge!('subject' => '0', 'start_date' => '1', 'due_date' => '2', "cf_#{field.id}" => '3')
     import.save!
 
     issue = new_record(Issue) { import.run } # only 1 valid issue

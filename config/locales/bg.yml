@@ -131,8 +131,6 @@ bg:
         circular_dependency: "Тази релация ще доведе до безкрайна зависимост"
         cant_link_an_issue_with_a_descendant: "Една задача не може да бъде свързвана към своя подзадача"
         earlier_than_minimum_start_date: "не може да бъде по-рано от %{date} поради предхождащи задачи"
-        not_a_regexp: "не е валиден регулярен израз"
-        open_issue_with_closed_parent: "Отворена задача не може да бъде асоциирана към затворена родителска задача"
 
   actionview_instancetag_blank_option: Изберете
 
@@ -149,7 +147,7 @@ bg:
   general_first_day_of_week: '1'
 
   notice_account_updated: Профилът е обновен успешно.
-  notice_account_invalid_credentials: Невалиден потребител или парола.
+  notice_account_invalid_creditentials: Невалиден потребител или парола.
   notice_account_password_updated: Паролата е успешно променена.
   notice_account_wrong_password: Грешна парола
   notice_account_register_done: Профилът е създаден успешно. E-mail, съдържащ инструкции за активиране на профила
@@ -188,8 +186,9 @@ bg:
   notice_account_deleted: Вашият профил беше премахнат без възможност за възстановяване.
   notice_user_successful_create: Потребител %{id} е създаден.
   notice_new_password_must_be_different: Новата парола трябва да бъде различна от сегашната парола
-  notice_import_finished: "%{count} обекта бяха импортирани"
-  notice_import_finished_with_errors: "%{count} от общо %{total} обекта не бяха инпортирани"
+  notice_import_finished: Всички %{count} обекта бяха импортирани.
+  notice_import_finished_with_errors: ! '%{count} от общо %{total} обекта не бяха инпортирани.'
+
   error_can_t_load_default_data: "Грешка при зареждане на началната информация: %{value}"
   error_scm_not_found: Несъществуващ обект в хранилището.
   error_scm_command_failed: "Грешка при опит за комуникация с хранилище: %{value}"
@@ -216,12 +215,7 @@ bg:
   error_invalid_csv_file_or_settings: Файлът не е CSV файл или не съответства на зададеното по-долу
   error_can_not_read_import_file: Грешка по време на четене на импортирания файл
   error_attachment_extension_not_allowed: Файлове от тип %{extension} не са позволени
-  error_ldap_bind_credentials: Невалидни LDAP име/парола
-  error_no_tracker_allowed_for_new_issue_in_project: Проектът няма тракери, за които да създавате задачи
-  error_no_projects_with_tracker_allowed_for_new_issue: Няма проекти с тракери за които можете да създавате задачи
-  error_move_of_child_not_possible: 'Подзадача %{child} не беше преместена в новия проект: %{errors}'
   error_cannot_reassign_time_entries_to_an_issue_about_to_be_deleted: Употребеното време не може да бъде прехвърлено на задача, която ще бъде изтрита
-  warning_fields_cleared_on_bulk_edit: Промените ще предизвикат автоматично изтриване на стойности от едно или повече полета на избраните обекти
 
   mail_subject_lost_password: "Вашата парола (%{value})"
   mail_body_lost_password: 'За да смените паролата си, използвайте следния линк:'
@@ -237,15 +231,6 @@ bg:
   mail_body_wiki_content_added: Wiki страницата '%{id}' беше добавена от %{author}.
   mail_subject_wiki_content_updated: "Wiki страницата '%{id}' беше обновена"
   mail_body_wiki_content_updated: Wiki страницата '%{id}' беше обновена от %{author}.
-  mail_subject_security_notification: Известие за промяна в сигурността
-  mail_body_security_notification_change: ! '%{field} беше променено.'
-  mail_body_security_notification_change_to: ! '%{field} беше променено на %{value}.'
-  mail_body_security_notification_add: ! '%{field} %{value} беше добавено.'
-  mail_body_security_notification_remove: ! '%{field} %{value} беше премахнато.'
-  mail_body_security_notification_notify_enabled: Имейл адрес %{value} вече получава известия.
-  mail_body_security_notification_notify_disabled: Имейл адрес %{value} вече не получава известия.
-  mail_body_settings_updated: ! 'Изменения в конфигурацията:'
-  mail_body_password_updated: Вашата парола е сменена.
 
   field_name: Име
   field_description: Описание
@@ -370,13 +355,6 @@ bg:
   field_time_entries_visibility: Видимост на записи за използвано време
   field_total_estimated_hours: Общо изчислено време
   field_default_version: Версия по подразбиране
-  field_remote_ip: IP адрес
-  field_textarea_font: Шрифт за текстови блокове
-  field_updated_by: Обновено от
-  field_last_updated_by: Последно обновено от
-  field_full_width_layout: Пълна широчина
-  field_digest: Контролна сума
-  field_default_assigned_to: Назначение по подразбиране
 
   setting_app_title: Заглавие
   setting_app_subtitle: Описание
@@ -384,7 +362,6 @@ bg:
   setting_default_language: Език по подразбиране
   setting_login_required: Изискване за вход в Redmine
   setting_self_registration: Регистрация от потребители
-  setting_show_custom_fields_on_registration: Показване на потребителските полета при регистрацията
   setting_attachment_max_size: Максимална големина на прикачен файл
   setting_issues_export_limit: Максимален брой задачи за експорт
   setting_mail_from: E-mail адрес за емисии
@@ -402,7 +379,6 @@ bg:
   setting_autologin: Автоматичен вход
   setting_date_format: Формат на датата
   setting_time_format: Формат на часа
-  setting_timespan_format: Формат на интервал от време
   setting_cross_project_issue_relations: Релации на задачи между проекти
   setting_cross_project_subtasks: Подзадачи от други проекти
   setting_issue_list_default_columns: Показвани колони по подразбиране
@@ -416,10 +392,8 @@ bg:
   setting_display_subprojects_issues: Задачите от подпроектите по подразбиране се показват в главните проекти
   setting_enabled_scm: Разрешена SCM
   setting_mail_handler_body_delimiters: Отрязване на e-mail-ите след един от тези редове
-  setting_mail_handler_enable_regex_delimiters: Разрешаванен на регулярни изрази
   setting_mail_handler_api_enabled: Разрешаване на WS за входящи e-mail-и
-  setting_mail_handler_api_key: API ключ за входящи e-mail-и
-  setting_sys_api_key: API ключ за хранилища
+  setting_mail_handler_api_key: API ключ
   setting_sequential_project_identifiers: Генериране на последователни проектни идентификатори
   setting_gravatar_enabled: Използване на портребителски икони от Gravatar
   setting_gravatar_default: Подразбиращо се изображение от Gravatar
@@ -429,7 +403,6 @@ bg:
   setting_openid: Рарешаване на OpenID вход и регистрация
   setting_password_max_age: Изискване за смяна на паролата след
   setting_password_min_length: Минимална дължина на парола
-  setting_lost_password: Забравена парола
   setting_new_project_user_role_id: Роля, давана на потребител, създаващ проекти, който не е администратор
   setting_default_projects_modules: Активирани модули по подразбиране за нов проект
   setting_issue_done_ratio: Изчисление на процента на готови задачи с
@@ -461,9 +434,6 @@ bg:
   setting_search_results_per_page: Резултати от търсене на страница
   setting_attachment_extensions_allowed: Позволени типове на файлове
   setting_attachment_extensions_denied: Разрешени типове на файлове
-  setting_new_item_menu_tab: Меню-елемент за добавяне на нови обекти (+)
-  setting_commit_logs_formatting: Прилагане на форматиране за съобщенията при поверяване
-  setting_timelog_required_fields: Задължителни полета за записи за изразходваното време
 
   permission_add_project: Създаване на проект
   permission_add_subprojects: Създаване на подпроекти
@@ -499,7 +469,6 @@ bg:
   permission_view_time_entries: Разглеждане на записите за изразходваното време
   permission_edit_time_entries: Редактиране на записите за изразходваното време
   permission_edit_own_time_entries: Редактиране на собствените записи за изразходваното време
-  permission_view_news: Разглеждане на новини
   permission_manage_news: Управление на новини
   permission_comment_news: Коментиране на новини
   permission_view_documents: Разглеждане на документи
@@ -582,7 +551,6 @@ bg:
   label_member_plural: Членове
   label_tracker: Тракер
   label_tracker_plural: Тракери
-  label_tracker_all: Всички тракери
   label_tracker_new: Нов тракер
   label_workflow: Работен процес
   label_issue_status: Състояние на задача
@@ -607,6 +575,7 @@ bg:
   label_my_page: Лична страница
   label_my_account: Профил
   label_my_projects: Проекти, в които участвам
+  label_my_page_block: Блокове в личната страница
   label_administration: Администрация
   label_login: Вход
   label_logout: Изход
@@ -640,9 +609,6 @@ bg:
   label_attribute: Атрибут
   label_attribute_plural: Атрибути
   label_no_data: Няма изходни данни
-  label_no_preview: Няма наличен преглед (preview)
-  label_no_preview_alternative_html: Няма наличен преглед (preview). %{link} файл вместо това.
-  label_no_preview_download: Изтегляне
   label_change_status: Промяна на състоянието
   label_history: История
   label_attachment: Файл
@@ -706,6 +672,7 @@ bg:
   label_internal: Вътрешен
   label_last_changes: "последни %{count} промени"
   label_change_view_all: Виж всички промени
+  label_personalize_page: Персонализиране
   label_comment: Коментар
   label_comment_plural: Коментари
   label_x_comments:
@@ -789,7 +756,6 @@ bg:
   label_wiki_edit_plural: Wiki редакции
   label_wiki_page: Wiki страница
   label_wiki_page_plural: Wiki страници
-  label_wiki_page_new: Нова wiki страница
   label_index_by_title: Индекс
   label_index_by_date: Индекс по дата
   label_current_version: Текуща версия
@@ -875,8 +841,8 @@ bg:
   label_user_mail_option_selected: "За всички събития само в избраните проекти..."
   label_user_mail_option_none: "Само за наблюдавани или в които участвам (автор или назначени на мен)"
   label_user_mail_option_only_my_events: Само за неща, в които съм включен/а
-  label_user_mail_option_only_assigned: Само за неща, които наблюдавам или са назначени на мен
-  label_user_mail_option_only_owner: Само за неща, които наблюдавам или съм техен собственик
+  label_user_mail_option_only_assigned: Само за неща, назначени на мен
+  label_user_mail_option_only_owner: Само за неща, на които аз съм собственик
   label_user_mail_no_self_notified: "Не искам известия за извършени от мен промени"
   label_registration_activation_by_email: активиране на профила по email
   label_registration_manual_activation: ръчно активиране
@@ -885,6 +851,7 @@ bg:
   label_age: Възраст
   label_change_properties: Промяна на настройки
   label_general: Основни
+  label_more: Още
   label_scm: SCM (Система за контрол на версиите)
   label_plugins: Плъгини
   label_ldap_authentication: LDAP оторизация
@@ -894,6 +861,7 @@ bg:
   label_preferences: Предпочитания
   label_chronological_order: Хронологичен ред
   label_reverse_chronological_order: Обратен хронологичен ред
+  label_planning: Планиране
   label_incoming_emails: Входящи e-mail-и
   label_generate_key: Генериране на ключ
   label_issue_watchers: Наблюдатели
@@ -956,7 +924,6 @@ bg:
   label_attribute_of_assigned_to: Assignee's %{name}
   label_attribute_of_user: User's %{name}
   label_attribute_of_fixed_version: Target version's %{name}
-  label_attribute_of_object: "%{name} на %{object_name}"
   label_cross_project_descendants: С подпроекти
   label_cross_project_tree: С дърво на проектите
   label_cross_project_hierarchy: С проектна йерархия
@@ -1013,14 +980,6 @@ bg:
   label_api: API
   label_field_format_enumeration: Списък ключ/стойност
   label_default_values_for_new_users: Стойности по подразбиране за нови потребители
-  label_relations: Релации
-  label_new_project_issue_tab_enabled: Показване на меню-елемент "Нова задача"
-  label_new_object_tab_enabled: Показване на изпадащ списък за меню-елемент "+"
-  label_table_of_contents: Съдържание
-  label_font_default: Шрифт по подразбиране
-  label_font_monospace: Monospaced шрифт
-  label_font_proportional: Пропорционален шрифт
-  label_last_notes: Последни коментари
 
   button_login: Вход
   button_submit: Изпращане
@@ -1075,7 +1034,6 @@ bg:
   button_close: Затваряне
   button_reopen: Отваряне
   button_import: Импорт
-  button_filter: Филтър
 
   status_active: активен
   status_registered: регистриран
@@ -1211,4 +1169,8 @@ bg:
   description_issue_category_reassign: Изберете категория
   description_wiki_subpages_reassign: Изберете нова родителска страница
   description_all_columns: Всички колони
+  description_date_range_list: Изберете диапазон от списъка
+  description_date_range_interval: Изберете диапазон чрез задаване на начална и крайна дати
+  description_date_from: Въведете начална дата
+  description_date_to: Въведете крайна дата
   text_repository_identifier_info: 'Позволени са малки букви (a-z), цифри, тирета и _.<br />Промяна след създаването му не е възможна.'

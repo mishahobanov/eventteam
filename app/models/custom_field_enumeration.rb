@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,6 +17,7 @@
 
 class CustomFieldEnumeration < ActiveRecord::Base
   belongs_to :custom_field
+  attr_accessible :name, :active, :position
 
   validates_presence_of :name, :position, :custom_field_id
   validates_length_of :name, :maximum => 60
@@ -50,15 +51,12 @@ class CustomFieldEnumeration < ActiveRecord::Base
   end
 
   def self.update_each(custom_field, attributes)
+    return unless attributes.is_a?(Hash)
     transaction do
       attributes.each do |enumeration_id, enumeration_attributes|
         enumeration = custom_field.enumerations.find_by_id(enumeration_id)
         if enumeration
-          if block_given?
-            yield enumeration, enumeration_attributes
-          else
-            enumeration.attributes = enumeration_attributes
-          end
+          enumeration.attributes = enumeration_attributes
           unless enumeration.save
             raise ActiveRecord::Rollback
           end

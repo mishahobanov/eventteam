@@ -60,18 +60,13 @@ module ObjectHelpers
     status
   end
 
-  def Tracker.generate(attributes={})
+  def Tracker.generate!(attributes={})
     @generated_tracker_name ||= 'Tracker 0'
     @generated_tracker_name.succ!
     tracker = Tracker.new(attributes)
     tracker.name = @generated_tracker_name.dup if tracker.name.blank?
-    tracker.default_status ||= IssueStatus.order(:position).first || IssueStatus.generate!
+    tracker.default_status ||= IssueStatus.order('position').first || IssueStatus.generate!
     yield tracker if block_given?
-    tracker
-  end
-
-  def Tracker.generate!(attributes={}, &block)
-    tracker = Tracker.generate(attributes, &block)
     tracker.save!
     tracker
   end
@@ -207,7 +202,7 @@ module ObjectHelpers
     @generated_changeset_rev.succ!
     changeset = new(attributes)
     changeset.repository ||= Project.find(1).repository
-    changeset.revision ||= @generated_changeset_rev.dup
+    changeset.revision ||= @generated_changeset_rev
     changeset.committed_on ||= Time.now
     yield changeset if block_given?
     changeset.save!
@@ -235,7 +230,7 @@ module ObjectHelpers
 
     import.settings = {
       'separator' => ";", 'wrapper' => '"', 'encoding' => "UTF-8",
-      'mapping' => {'project_id' => '1', 'tracker' => '13', 'subject' => '1'}
+      'mapping' => {'project_id' => '1', 'tracker_id' => '2', 'subject' => '1'}
     }
     import.save!
     import
@@ -243,21 +238,21 @@ module ObjectHelpers
 end
 
 module TrackerObjectHelpers
-  def generate_transitions!(arg)
-    if arg.delete(:clear)
+  def generate_transitions!(*args)
+    options = args.last.is_a?(Hash) ? args.pop : {}
+    if args.size == 1
+      args << args.first
+    end
+    if options[:clear]
       WorkflowTransition.where(:tracker_id => id).delete_all
     end
-    role_id = arg.delete(:role_id) || 1
-
-    arg.each do |old_status_id, new_status_ids|
-      Array.wrap(new_status_ids).each do |new_status_id|
-        WorkflowTransition.create!(
-          :tracker => self,
-          :role_id => role_id,
-          :old_status_id => old_status_id,
-          :new_status_id => new_status_id
-        )
-      end
+    args.each_cons(2) do |old_status_id, new_status_id|
+      WorkflowTransition.create!(
+        :tracker => self,
+        :role_id => (options[:role_id] || 1),
+        :old_status_id => old_status_id,
+        :new_status_id => new_status_id
+      )
     end
   end
 end

@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -37,14 +37,12 @@ class IssueImport < Import
   # Returns a scope of trackers that user is allowed to
   # import issue to
   def allowed_target_trackers
-    Issue.allowed_target_trackers(project, user)
+    project.trackers
   end
 
   def tracker
-    if mapping['tracker'].to_s =~ /\Avalue:(\d+)\z/
-      tracker_id = $1.to_i
-      allowed_target_trackers.find_by_id(tracker_id)
-    end
+    tracker_id = mapping['tracker_id'].to_i
+    allowed_target_trackers.find_by_id(tracker_id) || allowed_target_trackers.first
   end
 
   # Returns true if missing categories should be created during the import
@@ -59,44 +57,19 @@ class IssueImport < Import
       mapping['create_versions'] == '1'
   end
 
-  def mappable_custom_fields
-    if tracker
-      issue = Issue.new
-      issue.project = project
-      issue.tracker = tracker
-      issue.editable_custom_field_values(user).map(&:custom_field)
-    elsif project
-      project.all_issue_custom_fields
-    else
-      []
-    end
-  end
-
   private
 
-  def build_object(row, item)
+  def build_object(row)
     issue = Issue.new
     issue.author = user
     issue.notify = false
 
-    tracker_id = nil
-    if tracker
-      tracker_id = tracker.id
-    elsif tracker_name = row_value(row, 'tracker')
-      tracker_id = allowed_target_trackers.named(tracker_name).first.try(:id)
-    end
-
     attributes = {
       'project_id' => mapping['project_id'],
-      'tracker_id' => tracker_id,
+      'tracker_id' => mapping['tracker_id'],
       'subject' => row_value(row, 'subject'),
       'description' => row_value(row, 'description')
     }
-    if status_name = row_value(row, 'status')
-      if status_id = IssueStatus.named(status_name).first.try(:id)
-        attributes['status_id'] = status_id
-      end
-    end
     issue.send :safe_attributes=, attributes, user
 
     attributes = {}
@@ -139,15 +112,11 @@ class IssueImport < Import
     end
     if parent_issue_id = row_value(row, 'parent_issue_id')
       if parent_issue_id =~ /\A(#)?(\d+)\z/
-        parent_issue_id = $2.to_i
+        parent_issue_id = $2
         if $1
           attributes['parent_issue_id'] = parent_issue_id
-        else
-          if parent_issue_id > item.position
-            add_callback(parent_issue_id, 'set_as_parent', item.position)
-          elsif issue_id = items.where(:position => parent_issue_id).first.try(:obj_id)
-            attributes['parent_issue_id'] = issue_id
-          end
+        elsif issue_id = items.where(:position => parent_issue_id).first.try(:obj_id)
+          attributes['parent_issue_id'] = issue_id
         end
       else
         attributes['parent_issue_id'] = parent_issue_id
@@ -180,24 +149,6 @@ class IssueImport < Import
     end
 
     issue.send :safe_attributes=, attributes, user
-
-    if issue.tracker_id != tracker_id
-      issue.tracker_id = nil
-    end
-
     issue
-  end
-
-  # Callback that sets issue as the parent of a previously imported issue
-  def set_as_parent_callback(issue, child_position)
-    child_id = items.where(:position => child_position).first.try(:obj_id)
-    return unless child_id
-
-    child = Issue.find_by_id(child_id)
-    return unless child
-
-    child.parent_issue_id = issue.id
-    child.save!
-    issue.reload
   end
 end

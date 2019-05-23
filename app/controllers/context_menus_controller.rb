@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -19,7 +19,7 @@ class ContextMenusController < ApplicationController
   helper :watchers
   helper :issues
 
-  before_action :find_issues, :only => :issues
+  before_filter :find_issues, :only => :issues
 
   def issues
     if (@issues.size == 1)
@@ -29,15 +29,23 @@ class ContextMenusController < ApplicationController
 
     @allowed_statuses = @issues.map(&:new_statuses_allowed_to).reduce(:&)
 
-    @can = {:edit => @issues.all?(&:attributes_editable?),
+    @can = {:edit => User.current.allowed_to?(:edit_issues, @projects),
             :log_time => (@project && User.current.allowed_to?(:log_time, @project)),
             :copy => User.current.allowed_to?(:copy_issues, @projects) && Issue.allowed_target_projects.any?,
-            :add_watchers => User.current.allowed_to?(:add_issue_watchers, @projects),
-            :delete => @issues.all?(&:deletable?)
+            :delete => User.current.allowed_to?(:delete_issues, @projects)
             }
-
-    @assignables = @issues.map(&:assignable_users).reduce(:&)
-    @trackers = @projects.map {|p| Issue.allowed_target_trackers(p) }.reduce(:&)
+    if @project
+      if @issue
+        @assignables = @issue.assignable_users
+      else
+        @assignables = @project.assignable_users
+      end
+      @trackers = @project.trackers
+    else
+      #when multiple projects, we only keep the intersection of each set
+      @assignables = @projects.map(&:assignable_users).reduce(:&)
+      @trackers = @projects.map(&:trackers).reduce(:&)
+    end
     @versions = @projects.map {|p| p.shared_versions.open}.reduce(:&)
 
     @priorities = IssuePriority.active.reverse
@@ -45,7 +53,7 @@ class ContextMenusController < ApplicationController
 
     @options_by_custom_field = {}
     if @can[:edit]
-      custom_fields = @issues.map(&:editable_custom_fields).reduce(:&).reject(&:multiple?).select {|field| field.format.bulk_edit_supported}
+      custom_fields = @issues.map(&:editable_custom_fields).reduce(:&).reject(&:multiple?)
       custom_fields.each do |field|
         values = field.possible_values_options(@projects)
         if values.present?
@@ -59,10 +67,7 @@ class ContextMenusController < ApplicationController
   end
 
   def time_entries
-    @time_entries = TimeEntry.where(:id => params[:ids]).
-      preload(:project => :time_entry_activities).
-      preload(:user).to_a
-
+    @time_entries = TimeEntry.where(:id => params[:ids]).preload(:project).to_a
     (render_404; return) unless @time_entries.present?
     if (@time_entries.size == 1)
       @time_entry = @time_entries.first
@@ -70,7 +75,7 @@ class ContextMenusController < ApplicationController
 
     @projects = @time_entries.collect(&:project).compact.uniq
     @project = @projects.first if @projects.size == 1
-    @activities = @projects.map(&:activities).reduce(:&)
+    @activities = TimeEntryActivity.shared.active
 
     edit_allowed = @time_entries.all? {|t| t.editable_by?(User.current)}
     @can = {:edit => edit_allowed, :delete => edit_allowed}
@@ -78,7 +83,7 @@ class ContextMenusController < ApplicationController
 
     @options_by_custom_field = {}
     if @can[:edit]
-      custom_fields = @time_entries.map(&:editable_custom_fields).reduce(:&).reject(&:multiple?).select {|field| field.format.bulk_edit_supported}
+      custom_fields = @time_entries.map(&:editable_custom_fields).reduce(:&).reject(&:multiple?)
       custom_fields.each do |field|
         values = field.possible_values_options(@projects)
         if values.present?

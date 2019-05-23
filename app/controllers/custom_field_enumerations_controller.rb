@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,11 +17,10 @@
 
 class CustomFieldEnumerationsController < ApplicationController
   layout 'admin'
-  self.main_menu = false
 
-  before_action :require_admin
-  before_action :find_custom_field
-  before_action :find_enumeration, :only => :destroy
+  before_filter :require_admin
+  before_filter :find_custom_field
+  before_filter :find_enumeration, :only => :destroy
 
   helper :custom_fields
 
@@ -30,8 +29,7 @@ class CustomFieldEnumerationsController < ApplicationController
   end
 
   def create
-    @value = @custom_field.enumerations.build
-    @value.attributes = enumeration_params
+    @value = @custom_field.enumerations.build(params[:custom_field_enumeration])
     @value.save
     respond_to do |format|
       format.html { redirect_to custom_field_enumerations_path(@custom_field) }
@@ -40,8 +38,7 @@ class CustomFieldEnumerationsController < ApplicationController
   end
 
   def update_each
-    saved = CustomFieldEnumeration.update_each(@custom_field, update_each_params)
-    if saved
+    if CustomFieldEnumeration.update_each(@custom_field, params[:custom_field_enumerations])
       flash[:notice] = l(:notice_successful_update)
     end
     redirect_to :action => 'index'
@@ -70,15 +67,5 @@ class CustomFieldEnumerationsController < ApplicationController
     @value = @custom_field.enumerations.find(params[:id])
   rescue ActiveRecord::RecordNotFound
     render_404
-  end
-
-  def enumeration_params
-    params.require(:custom_field_enumeration).permit(:name, :active, :position)
-  end
-
-  def update_each_params
-    # params.require(:custom_field_enumerations).permit(:name, :active, :position) does not work here with param like this:
-    # "custom_field_enumerations":{"0":{"name": ...}, "1":{"name...}}
-    params.permit(:custom_field_enumerations => [:name, :active, :position]).require(:custom_field_enumerations)
   end
 end

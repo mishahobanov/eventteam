@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -21,23 +21,23 @@ class Redmine::ApiTest::UsersTest < Redmine::ApiTest::Base
   fixtures :users, :email_addresses, :members, :member_roles, :roles, :projects
 
   test "GET /users.xml should return users" do
-    get '/users.xml', :headers => credentials('admin')
+    get '/users.xml', {}, credentials('admin')
 
     assert_response :success
     assert_equal 'application/xml', response.content_type
     assert_select 'users' do
-      assert_select 'user', User.active.count
+      assert_select 'user', assigns(:users).size
     end
   end
 
   test "GET /users.json should return users" do
-    get '/users.json', :headers => credentials('admin')
+    get '/users.json', {}, credentials('admin')
 
     assert_response :success
     assert_equal 'application/json', response.content_type
     json = ActiveSupport::JSON.decode(response.body)
     assert json.key?('users')
-    assert_equal User.active.count, json['users'].size
+    assert_equal assigns(:users).size, json['users'].size
   end
 
   test "GET /users/:id.xml should return the user" do
@@ -84,58 +84,56 @@ class Redmine::ApiTest::UsersTest < Redmine::ApiTest::Base
   end
 
   test "GET /users/current.xml should return current user" do
-    get '/users/current.xml', :headers => credentials('jsmith')
+    get '/users/current.xml', {}, credentials('jsmith')
 
     assert_select 'user id', :text => '2'
   end
 
   test "GET /users/:id should not return login for other user" do
-    get '/users/3.xml', :headers => credentials('jsmith')
+    get '/users/3.xml', {}, credentials('jsmith')
     assert_response :success
     assert_select 'user login', 0
   end
 
   test "GET /users/:id should return login for current user" do
-    get '/users/2.xml', :headers => credentials('jsmith')
+    get '/users/2.xml', {}, credentials('jsmith')
     assert_response :success
     assert_select 'user login', :text => 'jsmith'
   end
 
   test "GET /users/:id should not return api_key for other user" do
-    get '/users/3.xml', :headers => credentials('jsmith')
+    get '/users/3.xml', {}, credentials('jsmith')
     assert_response :success
     assert_select 'user api_key', 0
   end
 
   test "GET /users/:id should return api_key for current user" do
-    get '/users/2.xml', :headers => credentials('jsmith')
+    get '/users/2.xml', {}, credentials('jsmith')
     assert_response :success
     assert_select 'user api_key', :text => User.find(2).api_key
   end
 
   test "GET /users/:id should not return status for standard user" do
-    get '/users/3.xml', :headers => credentials('jsmith')
+    get '/users/3.xml', {}, credentials('jsmith')
     assert_response :success
     assert_select 'user status', 0
   end
 
   test "GET /users/:id should return status for administrators" do
-    get '/users/2.xml', :headers => credentials('admin')
+    get '/users/2.xml', {}, credentials('admin')
     assert_response :success
     assert_select 'user status', :text => User.find(1).status.to_s
   end
 
   test "POST /users.xml with valid parameters should create the user" do
     assert_difference('User.count') do
-      post '/users.xml',
-        :params => {
-          :user => {
-            :login => 'foo', :firstname => 'Firstname', :lastname => 'Lastname',
-            :mail => 'foo@example.net', :password => 'secret123',
-            :mail_notification => 'only_assigned'
-          }
+      post '/users.xml', {
+        :user => {
+          :login => 'foo', :firstname => 'Firstname', :lastname => 'Lastname',
+          :mail => 'foo@example.net', :password => 'secret123',
+          :mail_notification => 'only_assigned'}
         },
-        :headers => credentials('admin')
+        credentials('admin')
     end
 
     user = User.order('id DESC').first
@@ -154,15 +152,13 @@ class Redmine::ApiTest::UsersTest < Redmine::ApiTest::Base
 
   test "POST /users.json with valid parameters should create the user" do
     assert_difference('User.count') do
-      post '/users.json',
-        :params => {
-          :user => {
-            :login => 'foo', :firstname => 'Firstname', :lastname => 'Lastname',
-            :mail => 'foo@example.net', :password => 'secret123',
-            :mail_notification => 'only_assigned'
-          }
+      post '/users.json', {
+        :user => {
+          :login => 'foo', :firstname => 'Firstname', :lastname => 'Lastname',
+          :mail => 'foo@example.net', :password => 'secret123',
+          :mail_notification => 'only_assigned'}
         },
-        :headers => credentials('admin')
+        credentials('admin')
     end
 
     user = User.order('id DESC').first
@@ -182,13 +178,7 @@ class Redmine::ApiTest::UsersTest < Redmine::ApiTest::Base
 
   test "POST /users.xml with with invalid parameters should return errors" do
     assert_no_difference('User.count') do
-      post '/users.xml',
-        :params => {
-          :user =>{
-            :login => 'foo', :lastname => 'Lastname', :mail => 'foo'
-          }
-        },
-        :headers => credentials('admin')
+      post '/users.xml', {:user => {:login => 'foo', :lastname => 'Lastname', :mail => 'foo'}}, credentials('admin')
     end
 
     assert_response :unprocessable_entity
@@ -198,13 +188,7 @@ class Redmine::ApiTest::UsersTest < Redmine::ApiTest::Base
 
   test "POST /users.json with with invalid parameters should return errors" do
     assert_no_difference('User.count') do
-      post '/users.json',
-        :params => {
-          :user => {
-            :login => 'foo', :lastname => 'Lastname', :mail => 'foo'
-          }
-        },
-        :headers => credentials('admin')
+      post '/users.json', {:user => {:login => 'foo', :lastname => 'Lastname', :mail => 'foo'}}, credentials('admin')
     end
 
     assert_response :unprocessable_entity
@@ -217,14 +201,12 @@ class Redmine::ApiTest::UsersTest < Redmine::ApiTest::Base
 
   test "PUT /users/:id.xml with valid parameters should update the user" do
     assert_no_difference('User.count') do
-      put '/users/2.xml',
-        :params => {
-          :user => {
-            :login => 'jsmith', :firstname => 'John', :lastname => 'Renamed',
-            :mail => 'jsmith@somenet.foo'
-          }
+      put '/users/2.xml', {
+        :user => {
+          :login => 'jsmith', :firstname => 'John', :lastname => 'Renamed',
+          :mail => 'jsmith@somenet.foo'}
         },
-        :headers => credentials('admin')
+        credentials('admin')
     end
 
     user = User.find(2)
@@ -240,14 +222,12 @@ class Redmine::ApiTest::UsersTest < Redmine::ApiTest::Base
 
   test "PUT /users/:id.json with valid parameters should update the user" do
     assert_no_difference('User.count') do
-      put '/users/2.json',
-        :params => {
-          :user => {
-            :login => 'jsmith', :firstname => 'John', :lastname => 'Renamed',
-            :mail => 'jsmith@somenet.foo'
-          }
+      put '/users/2.json', {
+        :user => {
+          :login => 'jsmith', :firstname => 'John', :lastname => 'Renamed',
+          :mail => 'jsmith@somenet.foo'}
         },
-        :headers => credentials('admin')
+        credentials('admin')
     end
 
     user = User.find(2)
@@ -263,14 +243,12 @@ class Redmine::ApiTest::UsersTest < Redmine::ApiTest::Base
 
   test "PUT /users/:id.xml with invalid parameters" do
     assert_no_difference('User.count') do
-      put '/users/2.xml',
-        :params => {
-          :user => {
-            :login => 'jsmith', :firstname => '', :lastname => 'Lastname',
-            :mail => 'foo'
-          }
+      put '/users/2.xml', {
+        :user => {
+          :login => 'jsmith', :firstname => '', :lastname => 'Lastname',
+          :mail => 'foo'}
         },
-        :headers => credentials('admin')
+        credentials('admin')
     end
 
     assert_response :unprocessable_entity
@@ -280,14 +258,12 @@ class Redmine::ApiTest::UsersTest < Redmine::ApiTest::Base
 
   test "PUT /users/:id.json with invalid parameters" do
     assert_no_difference('User.count') do
-      put '/users/2.json',
-        :params => {
-          :user => {
-            :login => 'jsmith', :firstname => '', :lastname => 'Lastname',
-            :mail => 'foo'
-          }
+      put '/users/2.json', {
+        :user => {
+          :login => 'jsmith', :firstname => '', :lastname => 'Lastname',
+          :mail => 'foo'}
         },
-        :headers => credentials('admin')
+        credentials('admin')
     end
 
     assert_response :unprocessable_entity
@@ -300,7 +276,7 @@ class Redmine::ApiTest::UsersTest < Redmine::ApiTest::Base
 
   test "DELETE /users/:id.xml should delete the user" do
     assert_difference('User.count', -1) do
-      delete '/users/2.xml', :headers => credentials('admin')
+      delete '/users/2.xml', {}, credentials('admin')
     end
 
     assert_response :ok
@@ -309,7 +285,7 @@ class Redmine::ApiTest::UsersTest < Redmine::ApiTest::Base
 
   test "DELETE /users/:id.json should delete the user" do
     assert_difference('User.count', -1) do
-      delete '/users/2.json', :headers => credentials('admin')
+      delete '/users/2.json', {}, credentials('admin')
     end
 
     assert_response :ok

@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -25,7 +25,6 @@ class CustomFieldVersionFormatTest < ActiveSupport::TestCase
   end
 
   def test_possible_values_options_with_no_arguments
-    Version.delete_all
     assert_equal [], @field.possible_values_options
     assert_equal [], @field.possible_values_options(nil)
   end

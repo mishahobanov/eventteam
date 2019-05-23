@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -64,7 +64,6 @@ Issue attributes control options:
   tracker=TRACKER          name of the target tracker
   category=CATEGORY        name of the target category
   priority=PRIORITY        name of the target priority
-  assigned_to=ASSIGNEE     assignee (username or group name)
   fixed_version=VERSION    name of the target version
   private                  create new issues as private
   allow_override=ATTRS     allow email content to set attributes values

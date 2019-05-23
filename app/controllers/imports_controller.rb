@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,13 +18,11 @@
 require 'csv'
 
 class ImportsController < ApplicationController
-  menu_item :issues
 
-  before_action :find_import, :only => [:show, :settings, :mapping, :run]
-  before_action :authorize_global
+  before_filter :find_import, :only => [:show, :settings, :mapping, :run]
+  before_filter :authorize_global
 
   helper :issues
-  helper :queries
 
   def new
   end
@@ -59,7 +57,11 @@ class ImportsController < ApplicationController
   end
 
   def mapping
-    @custom_fields = @import.mappable_custom_fields
+    issue = Issue.new
+    issue.project = @import.project
+    issue.tracker = @import.tracker
+    @attributes = issue.safe_attribute_names
+    @custom_fields = issue.editable_custom_field_values.map(&:custom_field)
 
     if request.post?
       respond_to do |format|

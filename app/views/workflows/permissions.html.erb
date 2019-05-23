@@ -16,12 +16,12 @@
   <label><%=l(:label_role)%>:
   <%= options_for_workflow_select 'role_id[]', Role.sorted.select(&:consider_workflow?), @roles, :id => 'role_id', :class => 'expandable' %>
   </label>
-  <a href="#" data-expands="#role_id"><span class="toggle-multiselect"></a>
+  <a href="#" data-expands="#role_id"><%= image_tag 'bullet_toggle_plus.png' %></a>
 
   <label><%=l(:label_tracker)%>:
   <%= options_for_workflow_select 'tracker_id[]', Tracker.sorted, @trackers, :id => 'tracker_id', :class => 'expandable' %>
   </label>
-  <a href="#" data-expands="#tracker_id"><span class="toggle-multiselect"></a>
+  <a href="#" data-expands="#tracker_id"><%= image_tag 'bullet_toggle_plus.png' %></a>
 
   <%= submit_tag l(:button_edit), :name => nil %>
 
@@ -60,12 +60,12 @@
         </td>
       </tr>
       <% @fields.each do |field, name| %>
-      <tr>
+      <tr class="<%= cycle("odd", "even") %>">
         <td class="name">
           <%= name %> <%= content_tag('span', '*', :class => 'required') if field_required?(field) %>
         </td>
         <% for status in @statuses -%>
-        <td class="<%= @permissions[status.id][field].try(:join, ' ') %>" title="<%= name %> (<%= status.name %>)">
+        <td class="<%= @permissions[status.id][field].try(:join, ' ') %>">
           <%= field_permission_tag(@permissions, status, field, @roles) %>
           <% unless status == @statuses.last %><a href="#" class="repeat-value">&#187;</a><% end %>
         </td>
@@ -80,12 +80,12 @@
           </td>
         </tr>
         <% @custom_fields.each do |field| %>
-        <tr>
+        <tr class="<%= cycle("odd", "even") %>">
           <td class="name">
             <%= field.name %> <%= content_tag('span', '*', :class => 'required') if field_required?(field) %>
           </td>
           <% for status in @statuses -%>
-          <td class="<%= @permissions[status.id][field.id.to_s].try(:join, ' ') %>" title="<%= field.name %> (<%= status.name %>)">
+          <td class="<%= @permissions[status.id][field.id.to_s].try(:join, ' ') %>">
             <%= field_permission_tag(@permissions, status, field, @roles) %>
             <% unless status == @statuses.last %><a href="#" class="repeat-value">&#187;</a><% end %>
           </td>

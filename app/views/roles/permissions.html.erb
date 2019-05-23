@@ -9,11 +9,9 @@
     <th><%=l(:label_permissions)%></th>
     <% @roles.each do |role| %>
     <th>
-        <%= link_to_function('',
-                             "toggleCheckboxesBySelector('input.role-#{role.id}')",
-                             :title => "#{l(:button_check_all)}/#{l(:button_uncheck_all)}",
-                             :class => 'icon-only icon-checked') %>
         <%= content_tag(role.builtin? ? 'em' : 'span', role.name) %>
+        <%= link_to_function(image_tag('toggle_check.png'), "toggleCheckboxesBySelector('input.role-#{role.id}')",
+                                                            :title => "#{l(:button_check_all)}/#{l(:button_uncheck_all)}") %>
     </th>
     <% end %>
     </tr>
@@ -33,23 +31,18 @@
         </tr>
     <% end %>
     <% perms_by_module[mod].each do |permission| %>
-        <% humanized_perm_name = l_or_humanize(permission.name, :prefix => 'permission_') %>
-        <tr class="permission-<%= permission.name %>">
+        <tr class="<%= cycle('odd', 'even') %> permission-<%= permission.name %>">
         <td class="name">
-            <%= link_to_function('',
-                                 "toggleCheckboxesBySelector('.permission-#{permission.name} input')",
-                                 :title => "#{l(:button_check_all)}/#{l(:button_uncheck_all)}",
-                                 :class => 'icon-only icon-checked') %>
-            <%= humanized_perm_name %>
+            <%= link_to_function(image_tag('toggle_check.png'), "toggleCheckboxesBySelector('.permission-#{permission.name} input')",
+                                                                :title => "#{l(:button_check_all)}/#{l(:button_uncheck_all)}") %>
+            <%= l_or_humanize(permission.name, :prefix => 'permission_') %>
         </td>
         <% @roles.each do |role| %>
-          <% if role.setable_permissions.include? permission %>
-            <td title="<%= "#{humanized_perm_name} (#{role.name})" %>">
-              <%= check_box_tag "permissions[#{role.id}][]", permission.name, (role.permissions.include? permission.name), :id => nil, :class => "role-#{role.id}" %>
-            </td>
-          <% else %>
-            <td></td>
-          <% end %>
+        <td>
+        <% if role.setable_permissions.include? permission %>
+          <%= check_box_tag "permissions[#{role.id}][]", permission.name, (role.permissions.include? permission.name), :id => nil, :class => "role-#{role.id}" %>
+        <% end %>
+        </td>
         <% end %>
         </tr>
     <% end %>

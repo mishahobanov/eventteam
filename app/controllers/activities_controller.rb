@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,7 +17,7 @@
 
 class ActivitiesController < ApplicationController
   menu_item :activity
-  before_action :find_optional_project
+  before_filter :find_optional_project
   accept_rss_auth :index
 
   def index
@@ -27,7 +27,7 @@ class ActivitiesController < ApplicationController
       begin; @date_to = params[:from].to_date + 1; rescue; end
     end
 
-    @date_to ||= User.current.today + 1
+    @date_to ||= Date.today + 1
     @date_from = @date_to - @days
     @with_subprojects = params[:with_subprojects].nil? ? Setting.display_subprojects_issues? : (params[:with_subprojects] == '1')
     if params[:user_id].present?

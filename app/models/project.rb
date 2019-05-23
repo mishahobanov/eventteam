@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -37,22 +37,21 @@ class Project < ActiveRecord::Base
   has_and_belongs_to_many :trackers, lambda {order(:position)}
   has_many :issues, :dependent => :destroy
   has_many :issue_changes, :through => :issues, :source => :journals
-  has_many :versions, :dependent => :destroy
+  has_many :versions, lambda {order("#{Version.table_name}.effective_date DESC, #{Version.table_name}.name DESC")}, :dependent => :destroy
   belongs_to :default_version, :class_name => 'Version'
-  belongs_to :default_assigned_to, :class_name => 'Principal'
   has_many :time_entries, :dependent => :destroy
-  has_many :queries, :dependent => :delete_all
+  has_many :queries, :class_name => 'IssueQuery', :dependent => :delete_all
   has_many :documents, :dependent => :destroy
   has_many :news, lambda {includes(:author)}, :dependent => :destroy
-  has_many :issue_categories, lambda {order(:name)}, :dependent => :delete_all
-  has_many :boards, lambda {order(:position)}, :inverse_of => :project, :dependent => :destroy
-  has_one :repository, lambda {where(:is_default => true)}
+  has_many :issue_categories, lambda {order("#{IssueCategory.table_name}.name")}, :dependent => :delete_all
+  has_many :boards, lambda {order("position ASC")}, :dependent => :destroy
+  has_one :repository, lambda {where(["is_default = ?", true])}
   has_many :repositories, :dependent => :destroy
   has_many :changesets, :through => :repository
   has_one :wiki, :dependent => :destroy
   # Custom field for the project issues
   has_and_belongs_to_many :issue_custom_fields,
-                          lambda {order(:position)},
+                          lambda {order("#{CustomField.table_name}.position")},
                           :class_name => 'IssueCustomField',
                           :join_table => "#{table_name_prefix}custom_fields_projects#{table_name_suffix}",
                           :association_foreign_key => 'custom_field_id'
@@ -73,7 +72,7 @@ class Project < ActiveRecord::Base
   validates_uniqueness_of :identifier, :if => Proc.new {|p| p.identifier_changed?}
   validates_length_of :name, :maximum => 255
   validates_length_of :homepage, :maximum => 255
-  validates_length_of :identifier, :maximum => IDENTIFIER_MAX_LENGTH
+  validates_length_of :identifier, :in => 1..IDENTIFIER_MAX_LENGTH
   # downcase letters, digits, dashes but not digits only
   validates_format_of :identifier, :with => /\A(?!\d+$)[a-z0-9\-_]*\z/, :if => Proc.new { |p| p.identifier_changed? }
   # reserved words
@@ -104,9 +103,11 @@ class Project < ActiveRecord::Base
     where(Project.allowed_to_condition(user, permission, *args))
   }
   scope :like, lambda {|arg|
-    if arg.present?
-      pattern = "%#{arg.to_s.strip}%"
-      where("LOWER(identifier) LIKE LOWER(:p) OR LOWER(name) LIKE LOWER(:p)", :p => pattern)
+    if arg.blank?
+      where(nil)
+    else
+      pattern = "%#{arg.to_s.strip.downcase}%"
+      where("LOWER(identifier) LIKE :p OR LOWER(name) LIKE :p", :p => pattern)
     end
   }
   scope :sorted, lambda {order(:lft)}
@@ -172,16 +173,15 @@ class Project < ActiveRecord::Base
   # Returns a SQL conditions string used to find all projects for which +user+ has the given +permission+
   #
   # Valid options:
-  # * :skip_pre_condition => true       don't check that the module is enabled (eg. when the condition is already set elsewhere in the query)
-  # * :project => project               limit the condition to project
-  # * :with_subprojects => true         limit the condition to project and its subprojects
-  # * :member => true                   limit the condition to the user projects
+  # * :project => limit the condition to project
+  # * :with_subprojects => limit the condition to project and its subprojects
+  # * :member => limit the condition to the user projects
   def self.allowed_to_condition(user, permission, options={})
     perm = Redmine::AccessControl.permission(permission)
     base_statement = (perm && perm.read? ? "#{Project.table_name}.status <> #{Project::STATUS_ARCHIVED}" : "#{Project.table_name}.status = #{Project::STATUS_ACTIVE}")
-    if !options[:skip_pre_condition] && perm && perm.project_module
+    if perm && perm.project_module
       # If the permission belongs to a project module, make sure the module is enabled
-      base_statement << " AND EXISTS (SELECT 1 AS one FROM #{EnabledModule.table_name} em WHERE em.project_id = #{Project.table_name}.id AND em.name='#{perm.project_module}')"
+      base_statement << " AND #{Project.table_name}.id IN (SELECT em.project_id FROM #{EnabledModule.table_name} em WHERE em.name='#{perm.project_module}')"
     end
     if project = options[:project]
       project_statement = project.project_condition(options[:with_subprojects])
@@ -204,9 +204,9 @@ class Project < ActiveRecord::Base
           statement_by_role[role] = s
         end
       end
-      user.project_ids_by_role.each do |role, project_ids|
-        if role.allowed_to?(permission) && project_ids.any?
-          statement_by_role[role] = "#{Project.table_name}.id IN (#{project_ids.join(',')})"
+      user.projects_by_role.each do |role, projects|
+        if role.allowed_to?(permission) && projects.any?
+          statement_by_role[role] = "#{Project.table_name}.id IN (#{projects.collect(&:id).join(',')})"
         end
       end
       if statement_by_role.empty?
@@ -235,11 +235,11 @@ class Project < ActiveRecord::Base
   end
 
   def principals
-    @principals ||= Principal.active.joins(:members).where("#{Member.table_name}.project_id = ?", id).distinct
+    @principals ||= Principal.active.joins(:members).where("#{Member.table_name}.project_id = ?", id).uniq
   end
 
   def users
-    @users ||= User.active.joins(:members).where("#{Member.table_name}.project_id = ?", id).distinct
+    @users ||= User.active.joins(:members).where("#{Member.table_name}.project_id = ?", id).uniq
   end
 
   # Returns the Systemwide and project specific activities
@@ -324,8 +324,6 @@ class Project < ActiveRecord::Base
     @shared_versions = nil
     @rolled_up_versions = nil
     @rolled_up_trackers = nil
-    @rolled_up_statuses = nil
-    @rolled_up_custom_fields = nil
     @all_issue_custom_fields = nil
     @all_time_entry_custom_fields = nil
     @to_param = nil
@@ -368,7 +366,7 @@ class Project < ActiveRecord::Base
 
     if version_ids.any? &&
       Issue.
-        joins(:project).
+        includes(:project).
         where("#{Project.table_name}.lft < ? OR #{Project.table_name}.rgt > ?", lft, rgt).
         where(:fixed_version_id => version_ids).
         exists?
@@ -433,35 +431,16 @@ class Project < ActiveRecord::Base
     save
   end
 
-  # Returns a scope of the trackers used by the project and its active sub projects
-  def rolled_up_trackers(include_subprojects=true)
-    if include_subprojects
-      @rolled_up_trackers ||= rolled_up_trackers_base_scope.
-          where("#{Project.table_name}.lft >= ? AND #{Project.table_name}.rgt <= ?", lft, rgt)
-    else
-      rolled_up_trackers_base_scope.
-        where(:projects => {:id => id})
-    end
-  end
-
-  def rolled_up_trackers_base_scope
-    Tracker.
-      joins(projects: :enabled_modules).
-      where("#{Project.table_name}.status <> ?", STATUS_ARCHIVED).
-      where(:enabled_modules => {:name => 'issue_tracking'}).
-      distinct.
-      sorted
-  end
-
-  def rolled_up_statuses
-    issue_status_ids = WorkflowTransition.
-      where(:tracker_id => rolled_up_trackers.map(&:id)).
-      distinct.
-      pluck(:old_status_id, :new_status_id).
-      flatten.
-      uniq
-
-    IssueStatus.where(:id => issue_status_ids).sorted
+  # Returns an array of the trackers used by the project and its active sub projects
+  def rolled_up_trackers
+    @rolled_up_trackers ||=
+      Tracker.
+        joins(:projects).
+        joins("JOIN #{EnabledModule.table_name} ON #{EnabledModule.table_name}.project_id = #{Project.table_name}.id AND #{EnabledModule.table_name}.name = 'issue_tracking'").
+        where("#{Project.table_name}.lft >= ? AND #{Project.table_name}.rgt <= ? AND #{Project.table_name}.status <> ?", lft, rgt, STATUS_ARCHIVED).
+        uniq.
+        sorted.
+        to_a
   end
 
   # Closes open and locked project versions that are completed
@@ -521,47 +500,30 @@ class Project < ActiveRecord::Base
   # Adds user as a project member with the default role
   # Used for when a non-admin user creates a project
   def add_default_member(user)
-    role = self.class.default_member_role
+    role = Role.givable.find_by_id(Setting.new_project_user_role_id.to_i) || Role.givable.first
     member = Member.new(:project => self, :principal => user, :roles => [role])
     self.members << member
     member
-  end
-
-	# Default role that is given to non-admin users that
-	# create a project
-  def self.default_member_role
-    Role.givable.find_by_id(Setting.new_project_user_role_id.to_i) || Role.givable.first
   end
 
   # Deletes all project's members
   def delete_all_members
     me, mr = Member.table_name, MemberRole.table_name
     self.class.connection.delete("DELETE FROM #{mr} WHERE #{mr}.member_id IN (SELECT #{me}.id FROM #{me} WHERE #{me}.project_id = #{id})")
-    Member.where(:project_id => id).delete_all
+    Member.delete_all(['project_id = ?', id])
   end
 
   # Return a Principal scope of users/groups issues can be assigned to
-  def assignable_users(tracker=nil)
-    return @assignable_users[tracker] if @assignable_users && @assignable_users[tracker]
-
+  def assignable_users
     types = ['User']
     types << 'Group' if Setting.issue_group_assignment?
 
-    scope = Principal.
+    @assignable_users ||= Principal.
       active.
       joins(:members => :roles).
       where(:type => types, :members => {:project_id => id}, :roles => {:assignable => true}).
-      distinct.
+      uniq.
       sorted
-
-    if tracker
-      # Rejects users that cannot the view the tracker
-      roles = Role.where(:assignable => true).select {|role| role.permissions_tracker?(:view_issues, tracker)}
-      scope = scope.where(:roles => {:id => roles.map(&:id)})
-    end
-
-    @assignable_users ||= {}
-    @assignable_users[tracker] = scope
   end
 
   # Returns the mail addresses of users that should be always notified on project events
@@ -572,7 +534,7 @@ class Project < ActiveRecord::Base
   # Returns the users that should be notified on project events
   def notified_users
     # TODO: User part should be extracted to User#notify_about?
-    members.preload(:principal).select {|m| m.principal.present? && (m.mail_notification? || m.principal.mail_notification == 'all')}.collect {|m| m.principal}
+    members.select {|m| m.principal.present? && (m.mail_notification? || m.principal.mail_notification == 'all')}.collect {|m| m.principal}
   end
 
   # Returns a scope of all custom fields enabled for project issues
@@ -588,22 +550,6 @@ class Project < ActiveRecord::Base
         where("is_for_all = ? OR id IN (SELECT DISTINCT cfp.custom_field_id" +
           " FROM #{table_name_prefix}custom_fields_projects#{table_name_suffix} cfp" +
           " WHERE cfp.project_id = ?)", true, id)
-    end
-  end
-
-  # Returns a scope of all custom fields enabled for issues of the project
-  # and its subprojects
-  def rolled_up_custom_fields
-    if leaf?
-      all_issue_custom_fields
-    else
-      @rolled_up_custom_fields ||= IssueCustomField.
-        sorted.
-        where("is_for_all = ? OR EXISTS (SELECT 1" +
-          " FROM #{table_name_prefix}custom_fields_projects#{table_name_suffix} cfp" +
-          " JOIN #{Project.table_name} p ON p.id = cfp.project_id" +
-          " WHERE cfp.custom_field_id = #{CustomField.table_name}.id" +
-          " AND p.lft >= ? AND p.rgt <= ?)", true, lft, rgt)
     end
   end
 
@@ -658,7 +604,7 @@ class Project < ActiveRecord::Base
   end
 
   def overdue?
-    active? && !due_date.nil? && (due_date < User.current.today)
+    active? && !due_date.nil? && (due_date < Date.today)
   end
 
   # Returns the percent completed for this project, based on the
@@ -756,21 +702,10 @@ class Project < ActiveRecord::Base
     'tracker_ids',
     'issue_custom_field_ids',
     'parent_id',
-    'default_version_id',
-    'default_assigned_to_id'
+    'default_version_id'
 
   safe_attributes 'enabled_module_names',
-    :if => lambda {|project, user|
-        if project.new_record?
-          if user.admin?
-            true
-          else
-            default_member_role.has_permission?(:select_project_modules)
-          end
-        else
-          user.allowed_to?(:select_project_modules, project)
-        end
-      }
+    :if => lambda {|project, user| project.new_record? || user.allowed_to?(:select_project_modules, project) }
 
   safe_attributes 'inherit_members',
     :if => lambda {|project, user| project.parent.nil? || project.parent.visible?(user)}
@@ -818,7 +753,7 @@ class Project < ActiveRecord::Base
   def copy(project, options={})
     project = project.is_a?(Project) ? project : Project.find(project)
 
-    to_be_copied = %w(members wiki versions issue_categories issues queries boards)
+    to_be_copied = %w(wiki versions issue_categories issues members queries boards)
     to_be_copied = to_be_copied & Array.wrap(options[:only]) unless options[:only].nil?
 
     Project.transaction do
@@ -854,11 +789,8 @@ class Project < ActiveRecord::Base
   end
 
   # Yields the given block for each project with its level in the tree
-  def self.project_tree(projects, options={}, &block)
+  def self.project_tree(projects, &block)
     ancestors = []
-    if options[:init_level] && projects.first
-      ancestors = projects.first.ancestors.to_a
-    end
     projects.sort_by(&:lft).each do |project|
       while (ancestors.any? && !project.is_descendant_of?(ancestors.last))
         ancestors.pop
@@ -882,7 +814,7 @@ class Project < ActiveRecord::Base
   end
 
   def remove_inherited_member_roles
-    member_roles = MemberRole.where(:member_id => membership_ids).to_a
+    member_roles = memberships.map(&:member_roles).flatten
     member_role_ids = member_roles.map(&:id)
     member_roles.each do |member_role|
       if member_role.inherited_from && !member_role_ids.include?(member_role.inherited_from)
@@ -981,7 +913,7 @@ class Project < ActiveRecord::Base
     # get copied before their children
     project.issues.reorder('root_id, lft').each do |issue|
       new_issue = Issue.new
-      new_issue.copy_from(issue, :subtasks => false, :link => false, :keep_status => true)
+      new_issue.copy_from(issue, :subtasks => false, :link => false)
       new_issue.project = self
       # Changing project resets the custom field values
       # TODO: handle this in Issue#project=
@@ -1084,12 +1016,12 @@ class Project < ActiveRecord::Base
   # Copies queries from +project+
   def copy_queries(project)
     project.queries.each do |query|
-      new_query = query.class.new
+      new_query = IssueQuery.new
       new_query.attributes = query.attributes.dup.except("id", "project_id", "sort_criteria", "user_id", "type")
       new_query.sort_criteria = query.sort_criteria if query.sort_criteria
       new_query.project = self
       new_query.user_id = query.user_id
-      new_query.role_ids = query.role_ids if query.visibility == ::Query::VISIBILITY_ROLES
+      new_query.role_ids = query.role_ids if query.visibility == IssueQuery::VISIBILITY_ROLES
       self.queries << new_query
     end
   end

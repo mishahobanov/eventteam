@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -93,7 +93,6 @@ class RedmineMailHandler
       opts.on("-t", "--tracker TRACKER",      "name of the target tracker") {|v| self.issue_attributes['tracker'] = v}
       opts.on(      "--category CATEGORY",    "name of the target category") {|v| self.issue_attributes['category'] = v}
       opts.on(      "--priority PRIORITY",    "name of the target priority") {|v| self.issue_attributes['priority'] = v}
-      opts.on(      "--assigned-to ASSIGNEE", "assignee (username or group name)") {|v| self.issue_attributes['assigned_to'] = v}
       opts.on(      "--fixed-version VERSION","name of the target version") {|v| self.issue_attributes['fixed_version'] = v}
       opts.on(      "--private",              "create new issues as private") {|v| self.issue_attributes['is_private'] = '1'}
       opts.on("-o", "--allow-override ATTRS", "allow email content to set attributes values",
@@ -117,7 +116,7 @@ Overrides:
 
 Examples:
   No project specified, emails MUST contain the 'Project' keyword, otherwise
-  they will be dropped (not recommended):
+  they will be dropped (not recommanded):
 
     rdm-mailhandler.rb --url http://redmine.domain.foo --key secret
 
@@ -165,7 +164,7 @@ END_DESC
     begin
       response = Net::HTTPS.post_form(URI.parse(uri), data, headers, :no_check_certificate => no_check_certificate, :certificate_bundle => certificate_bundle)
     rescue SystemCallError, IOError => e # connection refused, etc.
-      warn "An error occurred while contacting your Redmine server: #{e.message}"
+      warn "An error occured while contacting your Redmine server: #{e.message}"
       return 75 # temporary failure
     end
     debug "Response received: #{response.code}"

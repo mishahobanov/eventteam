@@ -11,6 +11,6 @@ class InsertBuiltinRoles < ActiveRecord::Migration
   end
 
   def self.down
-    Role.where('builtin <> 0').destroy_all
+    Role.destroy_all 'builtin <> 0'
   end
 end

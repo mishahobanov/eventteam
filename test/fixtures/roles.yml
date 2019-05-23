@@ -36,7 +36,6 @@ roles_001:
     - :view_time_entries
     - :edit_time_entries
     - :delete_time_entries
-    - :view_news
     - :manage_news
     - :comment_news
     - :view_documents
@@ -51,7 +50,6 @@ roles_001:
     - :protect_wiki_pages
     - :delete_wiki_pages
     - :rename_wiki_pages
-    - :view_messages
     - :add_messages
     - :edit_messages
     - :delete_messages
@@ -93,7 +91,6 @@ roles_002:
     - :log_time
     - :view_time_entries
     - :edit_own_time_entries
-    - :view_news
     - :manage_news
     - :comment_news
     - :view_documents
@@ -105,7 +102,6 @@ roles_002:
     - :edit_wiki_pages
     - :protect_wiki_pages
     - :delete_wiki_pages
-    - :view_messages
     - :add_messages
     - :edit_own_messages
     - :delete_own_messages
@@ -139,7 +135,6 @@ roles_003:
     - :view_calendar
     - :log_time
     - :view_time_entries
-    - :view_news
     - :manage_news
     - :comment_news
     - :view_documents
@@ -150,7 +145,6 @@ roles_003:
     - :view_wiki_edits
     - :edit_wiki_pages
     - :delete_wiki_pages
-    - :view_messages
     - :add_messages
     - :manage_boards
     - :view_files
@@ -177,20 +171,18 @@ roles_004:
     - :view_calendar
     - :log_time
     - :view_time_entries
-    - :view_news
     - :comment_news
     - :view_documents
     - :view_wiki_pages
     - :view_wiki_edits
     - :edit_wiki_pages
-    - :view_messages
     - :add_messages
     - :view_files
     - :manage_files
     - :browse_repository
     - :view_changesets
 
-  position: 1
+  position: 4
 roles_005: 
   name: Anonymous
   id: 5
@@ -204,14 +196,12 @@ roles_005:
     - :view_gantt
     - :view_calendar
     - :view_time_entries
-    - :view_news
     - :view_documents
     - :view_wiki_pages
     - :view_wiki_edits
-    - :view_messages
     - :view_files
     - :browse_repository
     - :view_changesets
 
-  position: 1
+  position: 5
 

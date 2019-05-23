@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,7 +17,7 @@
 
 require File.expand_path('../../test_helper', __FILE__)
 
-class WikisControllerTest < Redmine::ControllerTest
+class WikisControllerTest < ActionController::TestCase
   fixtures :projects, :users, :roles, :members, :member_roles, :enabled_modules, :wikis
 
   def setup
@@ -29,8 +29,9 @@ class WikisControllerTest < Redmine::ControllerTest
     assert_nil Project.find(3).wiki
 
     assert_difference 'Wiki.count' do
-      post :edit, :params => {:id => 3, :wiki => { :start_page => 'Start page' }}, :xhr => true
+      xhr :post, :edit, :id => 3, :wiki => { :start_page => 'Start page' }
       assert_response :success
+      assert_template 'edit'
       assert_equal 'text/javascript', response.content_type
     end
 
@@ -43,8 +44,9 @@ class WikisControllerTest < Redmine::ControllerTest
     @request.session[:user_id] = 1
 
     assert_no_difference 'Wiki.count' do
-      post :edit, :params => {:id => 3, :wiki => { :start_page => '' }}, :xhr => true
+      xhr :post, :edit, :id => 3, :wiki => { :start_page => '' }
       assert_response :success
+      assert_template 'edit'
       assert_equal 'text/javascript', response.content_type
     end
 
@@ -56,8 +58,9 @@ class WikisControllerTest < Redmine::ControllerTest
     @request.session[:user_id] = 1
 
     assert_no_difference 'Wiki.count' do
-      post :edit, :params => {:id => 1, :wiki => { :start_page => 'Other start page' }}, :xhr => true
+      xhr :post, :edit, :id => 1, :wiki => { :start_page => 'Other start page' }
       assert_response :success
+      assert_template 'edit'
       assert_equal 'text/javascript', response.content_type
     end
 
@@ -65,17 +68,9 @@ class WikisControllerTest < Redmine::ControllerTest
     assert_equal 'Other start page', wiki.start_page
   end
 
-  def test_get_destroy_should_ask_confirmation
+  def test_destroy
     @request.session[:user_id] = 1
-    assert_no_difference 'Wiki.count' do
-      get :destroy, :params => {:id => 1}
-      assert_response :success
-    end
-  end
-
-  def test_post_destroy_should_delete_wiki
-    @request.session[:user_id] = 1
-    post :destroy, :params => {:id => 1, :confirm => 1}
+    post :destroy, :id => 1, :confirm => 1
     assert_redirected_to :controller => 'projects',
                          :action => 'settings', :id => 'ecookbook', :tab => 'wiki'
     assert_nil Project.find(1).wiki
@@ -83,7 +78,7 @@ class WikisControllerTest < Redmine::ControllerTest
 
   def test_not_found
     @request.session[:user_id] = 1
-    post :destroy, :params => {:id => 999, :confirm => 1}
+    post :destroy, :id => 999, :confirm => 1
     assert_response 404
   end
 end

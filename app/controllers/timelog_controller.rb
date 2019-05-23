@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -16,22 +16,23 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 class TimelogController < ApplicationController
-  menu_item :time_entries
+  menu_item :issues
 
-  before_action :find_time_entry, :only => [:show, :edit, :update]
-  before_action :check_editability, :only => [:edit, :update]
-  before_action :find_time_entries, :only => [:bulk_edit, :bulk_update, :destroy]
-  before_action :authorize, :only => [:show, :edit, :update, :bulk_edit, :bulk_update, :destroy]
+  before_filter :find_time_entry, :only => [:show, :edit, :update]
+  before_filter :check_editability, :only => [:edit, :update]
+  before_filter :find_time_entries, :only => [:bulk_edit, :bulk_update, :destroy]
+  before_filter :authorize, :only => [:show, :edit, :update, :bulk_edit, :bulk_update, :destroy]
 
-  before_action :find_optional_issue, :only => [:new, :create]
-  before_action :find_optional_project, :only => [:index, :report]
-  before_action :authorize_global, :only => [:new, :create, :index, :report]
+  before_filter :find_optional_project, :only => [:new, :create, :index, :report]
+  before_filter :authorize_global, :only => [:new, :create, :index, :report]
 
   accept_rss_auth :index
   accept_api_auth :index, :show, :create, :update, :destroy
 
   rescue_from Query::StatementInvalid, :with => :query_statement_invalid
 
+  helper :sort
+  include SortHelper
   helper :issues
   include TimelogHelper
   helper :custom_fields
@@ -40,16 +41,20 @@ class TimelogController < ApplicationController
   include QueriesHelper
 
   def index
-    retrieve_time_entry_query
-    scope = time_entry_scope.
-      preload(:issue => [:project, :tracker, :status, :assigned_to, :priority]).
-      preload(:project, :user)
+    @query = TimeEntryQuery.build_from_params(params, :project => @project, :name => '_')
+
+    sort_init(@query.sort_criteria.empty? ? [['spent_on', 'desc']] : @query.sort_criteria)
+    sort_update(@query.sortable_columns)
+    scope = time_entry_scope(:order => sort_clause).
+      includes(:project, :user, :issue).
+      preload(:issue => [:project, :tracker, :status, :assigned_to, :priority])
 
     respond_to do |format|
       format.html {
         @entry_count = scope.count
         @entry_pages = Paginator.new @entry_count, per_page_option, params['page']
         @entries = scope.offset(@entry_pages.offset).limit(@entry_pages.per_page).to_a
+        @total_hours = scope.sum(:hours).to_f
 
         render :layout => !request.xhr?
       }
@@ -71,7 +76,7 @@ class TimelogController < ApplicationController
   end
 
   def report
-    retrieve_time_entry_query
+    @query = TimeEntryQuery.build_from_params(params, :project => @project, :name => '_')
     scope = time_entry_scope
 
     @report = Redmine::Helpers::TimeReport.new(@project, @issue, params[:criteria], params[:columns], scope)
@@ -85,7 +90,7 @@ class TimelogController < ApplicationController
   def show
     respond_to do |format|
       # TODO: Implement html response
-      format.html { head 406 }
+      format.html { render :nothing => true, :status => 406 }
       format.api
     end
   end
@@ -114,7 +119,6 @@ class TimelogController < ApplicationController
               :time_entry => {
                 :project_id => params[:time_entry][:project_id],
                 :issue_id => @time_entry.issue_id,
-                :spent_on => @time_entry.spent_on,
                 :activity_id => @time_entry.activity_id
               },
               :back_url => params[:back_url]
@@ -166,40 +170,26 @@ class TimelogController < ApplicationController
   end
 
   def bulk_edit
-    @available_activities = @projects.map(&:activities).reduce(:&)
-    @custom_fields = TimeEntry.first.available_custom_fields.select {|field| field.format.bulk_edit_supported}
+    @available_activities = TimeEntryActivity.shared.active
+    @custom_fields = TimeEntry.first.available_custom_fields
   end
 
   def bulk_update
-    attributes = parse_params_for_bulk_update(params[:time_entry])
+    attributes = parse_params_for_bulk_time_entry_attributes(params)
 
-    unsaved_time_entries = []
-    saved_time_entries = []
-
+    unsaved_time_entry_ids = []
     @time_entries.each do |time_entry|
       time_entry.reload
       time_entry.safe_attributes = attributes
       call_hook(:controller_time_entries_bulk_edit_before_save, { :params => params, :time_entry => time_entry })
-      if time_entry.save
-        saved_time_entries << time_entry
-      else
-        unsaved_time_entries << time_entry
+      unless time_entry.save
+        logger.info "time entry could not be updated: #{time_entry.errors.full_messages}" if logger && logger.info?
+        # Keep unsaved time_entry ids to display them in flash error
+        unsaved_time_entry_ids << time_entry.id
       end
     end
-
-    if unsaved_time_entries.empty?
-      flash[:notice] = l(:notice_successful_update) unless saved_time_entries.empty?
-      redirect_back_or_default project_time_entries_path(@projects.first)
-    else
-      @saved_time_entries = @time_entries
-      @unsaved_time_entries = unsaved_time_entries
-      @time_entries = TimeEntry.where(:id => unsaved_time_entries.map(&:id)).
-        preload(:project => :time_entry_activities).
-        preload(:user).to_a
-
-      bulk_edit
-      render :action => 'bulk_edit'
-    end
+    set_flash_from_bulk_time_entry_save(@time_entries, unsaved_time_entry_ids)
+    redirect_back_or_default project_time_entries_path(@projects.first)
   end
 
   def destroy
@@ -246,10 +236,7 @@ private
   end
 
   def find_time_entries
-    @time_entries = TimeEntry.where(:id => params[:id] || params[:ids]).
-      preload(:project => :time_entry_activities).
-      preload(:user).to_a
-
+    @time_entries = TimeEntry.where(:id => params[:id] || params[:ids]).to_a
     raise ActiveRecord::RecordNotFound if @time_entries.empty?
     raise Unauthorized unless @time_entries.all? {|t| t.editable_by?(User.current)}
     @projects = @time_entries.collect(&:project).compact.uniq
@@ -258,17 +245,22 @@ private
     render_404
   end
 
-  def find_optional_issue
-    if params[:issue_id].present?
-      @issue = Issue.find(params[:issue_id])
-      @project = @issue.project
+  def set_flash_from_bulk_time_entry_save(time_entries, unsaved_time_entry_ids)
+    if unsaved_time_entry_ids.empty?
+      flash[:notice] = l(:notice_successful_update) unless time_entries.empty?
     else
-      find_optional_project
+      flash[:error] = l(:notice_failed_to_save_time_entries,
+                        :count => unsaved_time_entry_ids.size,
+                        :total => time_entries.size,
+                        :ids => '#' + unsaved_time_entry_ids.join(', #'))
     end
   end
 
   def find_optional_project
-    if params[:project_id].present?
+    if params[:issue_id].present?
+      @issue = Issue.find(params[:issue_id])
+      @project = @issue.project
+    elsif params[:project_id].present?
       @project = Project.find(params[:project_id])
     end
   rescue ActiveRecord::RecordNotFound
@@ -277,10 +269,26 @@ private
 
   # Returns the TimeEntry scope for index and report actions
   def time_entry_scope(options={})
-    @query.results_scope(options)
+    scope = @query.results_scope(options)
+    if @issue
+      scope = scope.on_issue(@issue)
+    end
+    scope
   end
 
-  def retrieve_time_entry_query
-    retrieve_query(TimeEntryQuery, false)
+  def parse_params_for_bulk_time_entry_attributes(params)
+    attributes = (params[:time_entry] || {}).reject {|k,v| v.blank?}
+    attributes.keys.each {|k| attributes[k] = '' if attributes[k] == 'none'}
+    if custom = attributes[:custom_field_values]
+      custom.reject! {|k,v| v.blank?}
+      custom.keys.each do |k|
+        if custom[k].is_a?(Array)
+          custom[k] << '' if custom[k].delete('__none__')
+        else
+          custom[k] = '' if custom[k] == '__none__'
+        end
+      end
+    end
+    attributes
   end
 end

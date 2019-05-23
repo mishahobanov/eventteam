@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -22,8 +22,6 @@ if ENV["COVERAGE"]
   SimpleCov.start 'rails'
 end
 
-$redmine_test_ldap_server = ENV['REDMINE_TEST_LDAP_SERVER'] || '127.0.0.1'
-
 ENV["RAILS_ENV"] = "test"
 require File.expand_path(File.dirname(__FILE__) + "/../config/environment")
 require 'rails/test_help'
@@ -34,12 +32,8 @@ include ObjectHelpers
 
 require 'net/ldap'
 require 'mocha/setup'
-require 'fileutils'
 
 Redmine::SudoMode.disable!
-
-$redmine_tmp_attachments_directory = "#{Rails.root}/tmp/test/attachments"
-FileUtils.mkdir_p $redmine_tmp_attachments_directory
 
 class ActionView::TestCase
   helper :application
@@ -56,23 +50,38 @@ class ActiveSupport::TestCase
     fixture_file_upload("files/#{name}", mime, true)
   end
 
-  def mock_file(options=nil)
-    options ||= {
-        :original_filename => 'a_file.png',
-        :content_type => 'image/png',
-        :size => 32
-      }
+  # Mock out a file
+  def self.mock_file
+    file = 'a_file.png'
+    file.stubs(:size).returns(32)
+    file.stubs(:original_filename).returns('a_file.png')
+    file.stubs(:content_type).returns('image/png')
+    file.stubs(:read).returns(false)
+    file
+  end
 
-    Redmine::MockFile.new(options)
+  def mock_file
+    self.class.mock_file
   end
 
   def mock_file_with_options(options={})
-    mock_file(options)
+    file = ''
+    file.stubs(:size).returns(32)
+    original_filename = options[:original_filename] || nil
+    file.stubs(:original_filename).returns(original_filename)
+    content_type = options[:content_type] || nil
+    file.stubs(:content_type).returns(content_type)
+    file.stubs(:read).returns(false)
+    file
   end
 
   # Use a temporary directory for attachment related tests
   def set_tmp_attachments_directory
-    Attachment.storage_path = $redmine_tmp_attachments_directory
+    Dir.mkdir "#{Rails.root}/tmp/test" unless File.directory?("#{Rails.root}/tmp/test")
+    unless File.directory?("#{Rails.root}/tmp/test/attachments")
+      Dir.mkdir "#{Rails.root}/tmp/test/attachments"
+    end
+    Attachment.storage_path = "#{Rails.root}/tmp/test/attachments"
   end
 
   def set_fixtures_attachments_directory
@@ -113,7 +122,7 @@ class ActiveSupport::TestCase
   end
 
   def self.ldap_configured?
-    @test_ldap = Net::LDAP.new(:host => $redmine_test_ldap_server, :port => 389)
+    @test_ldap = Net::LDAP.new(:host => '127.0.0.1', :port => 389)
     return @test_ldap.bind
   rescue Exception => e
     # LDAP is not listening
@@ -246,26 +255,6 @@ class ActiveSupport::TestCase
 end
 
 module Redmine
-  class MockFile
-    attr_reader :size, :original_filename, :content_type
-  
-    def initialize(options={})
-      @size = options[:size] || 32
-      @original_filename = options[:original_filename] || options[:filename]
-      @content_type = options[:content_type]
-      @content = options[:content] || 'x'*size
-    end
-  
-    def read(*args)
-      if @eof
-        false
-      else
-        @eof = true
-        @content
-      end
-    end
-  end
-
   class RoutingTest < ActionDispatch::IntegrationTest
     def should_route(arg)
       arg = arg.dup
@@ -286,72 +275,15 @@ module Redmine
     end
   end
 
-  class HelperTest < ActionView::TestCase
-    include Redmine::I18n
-
-    def setup
-      super
-      User.current = nil
-      ::I18n.locale = 'en'
-    end
-  end
-
-  class ControllerTest < ActionController::TestCase
-    # Returns the issues that are displayed in the list in the same order
-    def issues_in_list
-      ids = css_select('tr.issue td.id').map(&:text).map(&:to_i)
-      Issue.where(:id => ids).sort_by {|issue| ids.index(issue.id)}
-    end
-  
-    # Return the columns that are displayed in the list
-    def columns_in_issues_list
-      css_select('table.issues thead th:not(.checkbox)').map(&:text)
-    end
-  
-    # Verifies that the query filters match the expected filters
-    def assert_query_filters(expected_filters)
-      response.body =~ /initFilters\(\);\s*((addFilter\(.+\);\s*)*)/
-      filter_init = $1.to_s
-  
-      expected_filters.each do |field, operator, values|
-        s = "addFilter(#{field.to_json}, #{operator.to_json}, #{Array(values).to_json});"
-        assert_include s, filter_init
-      end
-      assert_equal expected_filters.size, filter_init.scan("addFilter").size, "filters counts don't match"
-    end
-
-    def process(action, http_method = 'GET', *args)
-      parameters, session, flash = *args
-      if args.size == 1 && parameters[:xhr] == true
-        xhr http_method.downcase.to_sym, action, parameters.except(:xhr)
-      elsif parameters && (parameters.key?(:params) || parameters.key?(:session) || parameters.key?(:flash))
-        super action, http_method, parameters[:params], parameters[:session], parameters[:flash]
-      else
-        super
-      end
-    end
-  end
-
   class IntegrationTest < ActionDispatch::IntegrationTest
     def log_user(login, password)
       User.anonymous
       get "/login"
       assert_nil session[:user_id]
       assert_response :success
-
+      assert_template "account/login"
       post "/login", :username => login, :password => password
       assert_equal login, User.find(session[:user_id]).login
-    end
-
-    %w(get post patch put delete head).each do |http_method|
-      class_eval %Q"
-        def #{http_method}(path, parameters = nil, headers_or_env = nil)
-          if headers_or_env.nil? && parameters.is_a?(Hash) && (parameters.key?(:params) || parameters.key?(:headers))
-            super path, parameters[:params], parameters[:headers]
-          else
-            super
-          end
-        end"
     end
 
     def credentials(user, password=nil)

@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,17 +17,20 @@
 
 class IssueStatusesController < ApplicationController
   layout 'admin'
-  self.main_menu = false
 
-  before_action :require_admin, :except => :index
-  before_action :require_admin_or_api_request, :only => :index
+  before_filter :require_admin, :except => :index
+  before_filter :require_admin_or_api_request, :only => :index
   accept_api_auth :index
 
   def index
-    @issue_statuses = IssueStatus.sorted.to_a
     respond_to do |format|
-      format.html { render :layout => false if request.xhr? }
-      format.api
+      format.html {
+        @issue_status_pages, @issue_statuses = paginate IssueStatus.sorted, :per_page => 25
+        render :action => "index", :layout => false if request.xhr?
+      }
+      format.api {
+        @issue_statuses = IssueStatus.order('position').to_a
+      }
     end
   end
 
@@ -36,8 +39,7 @@ class IssueStatusesController < ApplicationController
   end
 
   def create
-    @issue_status = IssueStatus.new
-    @issue_status.safe_attributes = params[:issue_status]
+    @issue_status = IssueStatus.new(params[:issue_status])
     if @issue_status.save
       flash[:notice] = l(:notice_successful_create)
       redirect_to issue_statuses_path
@@ -52,20 +54,11 @@ class IssueStatusesController < ApplicationController
 
   def update
     @issue_status = IssueStatus.find(params[:id])
-    @issue_status.safe_attributes = params[:issue_status]
-    if @issue_status.save
-      respond_to do |format|
-        format.html {
-          flash[:notice] = l(:notice_successful_update)
-          redirect_to issue_statuses_path(:page => params[:page])
-        }
-        format.js { head 200 }
-      end
+    if @issue_status.update_attributes(params[:issue_status])
+      flash[:notice] = l(:notice_successful_update)
+      redirect_to issue_statuses_path(:page => params[:page])
     else
-      respond_to do |format|
-        format.html { render :action => 'edit' }
-        format.js { head 422 }
-      end
+      render :action => 'edit'
     end
   end
 

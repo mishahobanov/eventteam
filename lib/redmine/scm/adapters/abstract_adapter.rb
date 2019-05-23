@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -22,23 +22,21 @@ module Redmine
   module Scm
     module Adapters
       class AbstractAdapter #:nodoc:
-        include Redmine::Utils::Shell
 
         # raised if scm command exited with error, e.g. unknown revision.
         class ScmCommandAborted < ::Redmine::Scm::Adapters::CommandFailed; end
 
         class << self
-
           def client_command
             ""
           end
 
-          def shell_quote(str)
-            Redmine::Utils::Shell.shell_quote str
-          end
-
           def shell_quote_command
-            Redmine::Utils::Shell.shell_quote_command client_command
+            if Redmine::Platform.mswin? && RUBY_PLATFORM == 'java'
+              client_command
+            else
+              shell_quote(client_command)
+            end
           end
 
           # Returns the version of the scm client
@@ -66,6 +64,13 @@ module Redmine
             true
           end
 
+          def shell_quote(str)
+            if Redmine::Platform.mswin?
+              '"' + str.gsub(/"/, '\\"') + '"'
+            else
+              "'" + str.gsub(/'/, "'\"'\"'") + "'"
+            end
+          end
         end
 
         def initialize(url, root_url=nil, login=nil, password=nil,
@@ -173,6 +178,10 @@ module Redmine
         def without_trailling_slash(path)
           path ||= ''
           (path[-1,1] == "/") ? path[0..-2] : path
+        end
+
+        def shell_quote(str)
+          self.class.shell_quote(str)
         end
 
       private
@@ -420,14 +429,6 @@ module Redmine
 
       class Branch < String
         attr_accessor :revision, :scmid
-      end
-
-      module ScmData
-        def self.binary?(data)
-          unless data.empty?
-            data.count( "^ -~", "^\r\n" ).fdiv(data.size) > 0.3 || data.index( "\x00" )
-          end
-        end
       end
     end
   end

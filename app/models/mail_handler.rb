@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -62,10 +62,10 @@ class MailHandler < ActionMailer::Base
   # Use when receiving emails with rake tasks
   def self.extract_options_from_env(env)
     options = {:issue => {}}
-    %w(project status tracker category priority assigned_to fixed_version).each do |option|
+    %w(project status tracker category priority fixed_version).each do |option|
       options[:issue][option.to_sym] = env[option] if env[option]
     end
-    %w(allow_override unknown_user no_permission_check no_account_notice no_notification default_group project_from_subaddress).each do |option|
+    %w(allow_override unknown_user no_permission_check no_account_notice default_group project_from_subaddress).each do |option|
       options[option.to_sym] = env[option] if env[option]
     end
     if env['private']
@@ -130,7 +130,7 @@ class MailHandler < ActionMailer::Base
           end
           add_user_to_group(handler_options[:default_group])
           unless handler_options[:no_account_notice]
-            ::Mailer.account_information(@user, @user.password).deliver
+            Mailer.account_information(@user, @user.password).deliver
           end
         else
           if logger
@@ -199,21 +199,14 @@ class MailHandler < ActionMailer::Base
     end
 
     issue = Issue.new(:author => user, :project => project)
-    attributes = issue_attributes_from_keywords(issue)
-    if handler_options[:no_permission_check]
-      issue.tracker_id = attributes['tracker_id']
-      if project
-        issue.tracker_id ||= project.trackers.first.try(:id)
-      end
-    end
-    issue.safe_attributes = attributes
+    issue.safe_attributes = issue_attributes_from_keywords(issue)
     issue.safe_attributes = {'custom_field_values' => custom_field_values_from_keywords(issue)}
     issue.subject = cleaned_up_subject
     if issue.subject.blank?
       issue.subject = '(no subject)'
     end
     issue.description = cleaned_up_text_body
-    issue.start_date ||= User.current.today if Setting.default_issue_start_date_to_creation_date?
+    issue.start_date ||= Date.today if Setting.default_issue_start_date_to_creation_date?
     issue.is_private = (handler_options[:issue][:is_private] == '1')
 
     # add To and Cc as watchers before saving so the watchers can reply to Redmine
@@ -247,9 +240,6 @@ class MailHandler < ActionMailer::Base
     issue.safe_attributes = issue_attributes_from_keywords(issue)
     issue.safe_attributes = {'custom_field_values' => custom_field_values_from_keywords(issue)}
     journal.notes = cleaned_up_text_body
-
-    # add To and Cc as watchers before saving so the watchers can reply to Redmine
-    add_watchers(issue)
     add_attachments(issue)
     issue.save!
     if logger
@@ -296,9 +286,8 @@ class MailHandler < ActionMailer::Base
     if email.attachments && email.attachments.any?
       email.attachments.each do |attachment|
         next unless accept_attachment?(attachment)
-        next unless attachment.body.decoded.size > 0
         obj.attachments << Attachment.create(:container => obj,
-                          :file => attachment.body.decoded,
+                          :file => attachment.decoded,
                           :filename => attachment.filename,
                           :author => user,
                           :content_type => attachment.mime_type)
@@ -322,13 +311,11 @@ class MailHandler < ActionMailer::Base
   # Adds To and Cc as watchers of the given object if the sender has the
   # appropriate permission
   def add_watchers(obj)
-    if handler_options[:no_permission_check] || user.allowed_to?("add_#{obj.class.name.underscore}_watchers".to_sym, obj.project)
+    if user.allowed_to?("add_#{obj.class.name.underscore}_watchers".to_sym, obj.project)
       addresses = [email.to, email.cc].flatten.compact.uniq.collect {|a| a.strip.downcase}
       unless addresses.empty?
-        users = User.active.having_mail(addresses).to_a
-        users -= obj.watcher_users
-        users.each do |u|
-          obj.add_watcher(u)
+        User.active.having_mail(addresses).each do |w|
+          obj.add_watcher(w)
         end
       end
     end
@@ -428,6 +415,10 @@ class MailHandler < ActionMailer::Base
       'done_ratio' => get_keyword(:done_ratio, :format => '(\d|10)?0')
     }.delete_if {|k, v| v.blank? }
 
+    if issue.new_record? && attrs['tracker_id'].nil?
+      attrs['tracker_id'] = issue.project.trackers.first.try(:id)
+    end
+
     attrs
   end
 
@@ -446,27 +437,19 @@ class MailHandler < ActionMailer::Base
   def plain_text_body
     return @plain_text_body unless @plain_text_body.nil?
 
-    # check if we have any plain-text parts with content
-    @plain_text_body = email_parts_to_text(email.all_parts.select {|p| p.mime_type == 'text/plain'}).presence
+    parts = if (text_parts = email.all_parts.select {|p| p.mime_type == 'text/plain'}).present?
+              text_parts
+            elsif (html_parts = email.all_parts.select {|p| p.mime_type == 'text/html'}).present?
+              html_parts
+            else
+              [email]
+            end
 
-    # if not, we try to parse the body from the HTML-parts
-    @plain_text_body ||= email_parts_to_text(email.all_parts.select {|p| p.mime_type == 'text/html'}).presence
-
-    # If there is still no body found, and there are no mime-parts defined,
-    # we use the whole raw mail body
-    @plain_text_body ||= email_parts_to_text([email]).presence if email.all_parts.empty?
-
-    # As a fallback we return an empty plain text body (e.g. if we have only
-    # empty text parts but a non-text attachment)
-    @plain_text_body ||= ""
-  end
-
-  def email_parts_to_text(parts)
     parts.reject! do |part|
       part.attachment?
     end
 
-    parts.map do |p|
+    @plain_text_body = parts.map do |p|
       body_charset = Mail::RubyVer.respond_to?(:pick_encoding) ?
                        Mail::RubyVer.pick_encoding(p.charset).to_s : p.charset
 
@@ -474,6 +457,8 @@ class MailHandler < ActionMailer::Base
       # convert html parts to text
       p.mime_type == 'text/html' ? self.class.html_body_to_text(body) : self.class.plain_text_body_to_text(body)
     end.join("\r\n")
+
+    @plain_text_body
   end
 
   def cleaned_up_text_body
@@ -568,18 +553,9 @@ class MailHandler < ActionMailer::Base
 
   # Removes the email body of text after the truncation configurations.
   def cleanup_body(body)
-    delimiters = Setting.mail_handler_body_delimiters.to_s.split(/[\r\n]+/).reject(&:blank?)
-
-    if Setting.mail_handler_enable_regex_delimiters?
-      begin
-        delimiters = delimiters.map {|s| Regexp.new(s)}
-      rescue RegexpError => e
-        logger.error "MailHandler: invalid regexp delimiter found in mail_handler_body_delimiters setting (#{e.message})" if logger
-      end
-    end
-
+    delimiters = Setting.mail_handler_body_delimiters.to_s.split(/[\r\n]+/).reject(&:blank?).map {|s| Regexp.escape(s)}
     unless delimiters.empty?
-      regex = Regexp.new("^[> ]*(#{ Regexp.union(delimiters) })[[:blank:]]*[\r\n].*", Regexp::MULTILINE)
+      regex = Regexp.new("^[> ]*(#{ delimiters.join('|') })\s*[\r\n].*", Regexp::MULTILINE)
       body = body.gsub(regex, '')
     end
     body.strip

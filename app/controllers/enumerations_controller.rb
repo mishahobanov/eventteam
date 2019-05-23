@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,12 +17,11 @@
 
 class EnumerationsController < ApplicationController
   layout 'admin'
-  self.main_menu = false
 
-  before_action :require_admin, :except => :index
-  before_action :require_admin_or_api_request, :only => :index
-  before_action :build_new_enumeration, :only => [:new, :create]
-  before_action :find_enumeration, :only => [:edit, :update, :destroy]
+  before_filter :require_admin, :except => :index
+  before_filter :require_admin_or_api_request, :only => :index
+  before_filter :build_new_enumeration, :only => [:new, :create]
+  before_filter :find_enumeration, :only => [:edit, :update, :destroy]
   accept_api_auth :index
 
   helper :custom_fields
@@ -57,19 +56,11 @@ class EnumerationsController < ApplicationController
   end
 
   def update
-    if @enumeration.update_attributes(enumeration_params)
-      respond_to do |format|
-        format.html {
-          flash[:notice] = l(:notice_successful_update)
-          redirect_to enumerations_path
-        }
-        format.js { head 200 }
-      end
+    if @enumeration.update_attributes(params[:enumeration])
+      flash[:notice] = l(:notice_successful_update)
+      redirect_to enumerations_path
     else
-      respond_to do |format|
-        format.html { render :action => 'edit' }
-        format.js { head 422 }
-      end
+      render :action => 'edit'
     end
   end
 
@@ -91,7 +82,7 @@ class EnumerationsController < ApplicationController
 
   def build_new_enumeration
     class_name = params[:enumeration] && params[:enumeration][:type] || params[:type]
-    @enumeration = Enumeration.new_subclass_instance(class_name, enumeration_params)
+    @enumeration = Enumeration.new_subclass_instance(class_name, params[:enumeration])
     if @enumeration.nil?
       render_404
     end
@@ -101,10 +92,5 @@ class EnumerationsController < ApplicationController
     @enumeration = Enumeration.find(params[:id])
   rescue ActiveRecord::RecordNotFound
     render_404
-  end
-
-  def enumeration_params
-    # can't require enumeration on #new action
-    params.permit(:enumeration => [:name, :active, :is_default, :position])[:enumeration]
   end
 end

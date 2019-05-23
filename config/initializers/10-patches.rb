@@ -4,18 +4,9 @@ module ActiveRecord
   class Base
     include Redmine::I18n
     # Translate attribute names for validation errors display
-    def self.human_attribute_name(attr, options = {})
-      prepared_attr = attr.to_s.sub(/_id$/, '').sub(/^.+\./, '')
-      class_prefix = name.underscore.gsub('/', '_')
-
-      redmine_default = [
-        :"field_#{class_prefix}_#{prepared_attr}",
-        :"field_#{prepared_attr}"
-      ]
-
-      options[:default] = redmine_default + Array(options[:default])
-
-      super
+    def self.human_attribute_name(attr, *args)
+      attr = attr.to_s.sub(/_id$/, '').sub(/^.+\./, '')
+      l("field_#{name.underscore.gsub('/', '_')}_#{attr}", :default => ["field_#{attr}".to_sym, attr])
     end
   end
 
@@ -70,35 +61,35 @@ module ActionView
     module Tags
       class Base
         private
-        alias :add_options_without_non_empty_blank_option :add_options
-        def add_options(option_tags, options, value = nil)
+        def add_options_with_non_empty_blank_option(option_tags, options, value = nil)
           if options[:include_blank] == true
             options = options.dup
             options[:include_blank] = '&nbsp;'.html_safe
           end
           add_options_without_non_empty_blank_option(option_tags, options, value)
         end
+        alias_method_chain :add_options, :non_empty_blank_option
       end
     end
 
     module FormTagHelper
-      alias :select_tag_without_non_empty_blank_option :select_tag
-      def select_tag(name, option_tags = nil, options = {})
+      def select_tag_with_non_empty_blank_option(name, option_tags = nil, options = {})
         if options.delete(:include_blank)
           options[:prompt] = '&nbsp;'.html_safe
         end
         select_tag_without_non_empty_blank_option(name, option_tags, options)
       end
+      alias_method_chain :select_tag, :non_empty_blank_option
     end
 
     module FormOptionsHelper
-      alias :options_for_select_without_non_empty_blank_option :options_for_select
-      def options_for_select(container, selected = nil)
+      def options_for_select_with_non_empty_blank_option(container, selected = nil)
         if container.is_a?(Array)
           container = container.map {|element| element.blank? ? ["&nbsp;".html_safe, ""] : element}
         end
         options_for_select_without_non_empty_blank_option(container, selected)
       end
+      alias_method_chain :options_for_select, :non_empty_blank_option
     end
   end
 end
@@ -184,57 +175,6 @@ module ActionController
       $stderr.puts "Please remove config/initializers/session_store.rb and run `rake generate_secret_token`.\n" +
         "Setting the session secret with ActionController.session= is no longer supported."
       exit 1
-    end
-  end
-end
-
-# Adds asset_id parameters to assets like Rails 3 to invalidate caches in browser
-module ActionView
-  module Helpers
-    module AssetUrlHelper
-      @@cache_asset_timestamps = Rails.env.production?
-      @@asset_timestamps_cache = {}
-      @@asset_timestamps_cache_guard = Mutex.new
-
-      def asset_path_with_asset_id(source, options = {})
-        asset_id = rails_asset_id(source, options)
-        unless asset_id.blank?
-          source += "?#{asset_id}"
-        end
-        asset_path(source, options)
-      end
-      alias :path_to_asset :asset_path_with_asset_id
-
-      def rails_asset_id(source, options = {})
-        if asset_id = ENV["RAILS_ASSET_ID"]
-          asset_id
-        else
-          if @@cache_asset_timestamps && (asset_id = @@asset_timestamps_cache[source])
-            asset_id
-          else
-            extname = compute_asset_extname(source, options)
-            path = File.join(Rails.public_path, "#{source}#{extname}")
-            exist = false
-            if File.exist? path
-              exist = true
-            else
-              path = File.join(Rails.public_path, compute_asset_path("#{source}#{extname}", options))
-              if File.exist? path
-                exist = true
-              end
-            end
-            asset_id = exist ? File.mtime(path).to_i.to_s : ''
-
-            if @@cache_asset_timestamps
-              @@asset_timestamps_cache_guard.synchronize do
-                @@asset_timestamps_cache[source] = asset_id
-              end
-            end
-
-            asset_id
-          end
-        end
-      end
     end
   end
 end

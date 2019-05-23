@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -29,8 +29,6 @@ class IssueRelation < ActiveRecord::Base
       map {|relation| relation.to_s(@issue)}.join(', ')
     end
   end
-
-  include Redmine::SafeAttributes
 
   belongs_to :issue_from, :class_name => 'Issue'
   belongs_to :issue_to, :class_name => 'Issue'
@@ -77,24 +75,6 @@ class IssueRelation < ActiveRecord::Base
   after_create  :call_issues_relation_added_callback
   after_destroy :call_issues_relation_removed_callback
 
-  safe_attributes 'relation_type',
-    'delay',
-    'issue_to_id'
-
-  def safe_attributes=(attrs, user=User.current)
-    return unless attrs.is_a?(Hash)
-    attrs = attrs.deep_dup
-
-    if issue_id = attrs.delete('issue_to_id')
-      if issue_id.to_s.strip.match(/\A#?(\d+)\z/)
-        issue_id = $1.to_i
-        self.issue_to = Issue.visible(user).find_by_id(issue_id)
-      end
-    end
-
-    super(attrs)
-  end
-
   def visible?(user=User.current)
     (issue_from.nil? || issue_from.visible?(user)) && (issue_to.nil? || issue_to.visible?(user))
   end
@@ -121,8 +101,11 @@ class IssueRelation < ActiveRecord::Base
                 Setting.cross_project_issue_relations?
         errors.add :issue_to_id, :not_same_project
       end
-      if circular_dependency?
-        errors.add :base, :circular_dependency
+      # detect circular dependencies depending wether the relation should be reversed
+      if TYPES.has_key?(relation_type) && TYPES[relation_type][:reverse]
+        errors.add :base, :circular_dependency if issue_from.all_dependent_issues.include? issue_to
+      else
+        errors.add :base, :circular_dependency if issue_to.all_dependent_issues.include? issue_from
       end
       if issue_from.is_descendant_of?(issue_to) || issue_from.is_ancestor_of?(issue_to)
         errors.add :base, :cant_link_an_issue_with_a_descendant
@@ -176,10 +159,10 @@ class IssueRelation < ActiveRecord::Base
     set_issue_to_dates
   end
 
-  def set_issue_to_dates(journal=nil)
+  def set_issue_to_dates
     soonest_start = self.successor_soonest_start
     if soonest_start && issue_to
-      issue_to.reschedule_on!(soonest_start, journal)
+      issue_to.reschedule_on!(soonest_start)
     end
   end
 
@@ -204,37 +187,13 @@ class IssueRelation < ActiveRecord::Base
 
   # Reverses the relation if needed so that it gets stored in the proper way
   # Should not be reversed before validation so that it can be displayed back
-  # as entered on new relation form.
-  #
-  # Orders relates relations by ID, so that uniqueness index in DB is triggered
-  # on concurrent access.
+  # as entered on new relation form
   def reverse_if_needed
     if TYPES.has_key?(relation_type) && TYPES[relation_type][:reverse]
       issue_tmp = issue_to
       self.issue_to = issue_from
       self.issue_from = issue_tmp
       self.relation_type = TYPES[relation_type][:reverse]
-
-    elsif relation_type == TYPE_RELATES && issue_from_id > issue_to_id
-      self.issue_to, self.issue_from = issue_from, issue_to
-    end
-  end
-
-  # Returns true if the relation would create a circular dependency
-  def circular_dependency?
-    case relation_type
-    when 'follows'
-      issue_from.would_reschedule? issue_to
-    when 'precedes'
-      issue_to.would_reschedule? issue_from
-    when 'blocked'
-      issue_from.blocks? issue_to
-    when 'blocks'
-      issue_to.blocks? issue_from
-    when 'relates'
-      self.class.where(issue_from_id: issue_to, issue_to_id: issue_from).present?
-    else
-      false
     end
   end
 

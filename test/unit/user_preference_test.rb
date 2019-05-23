@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -30,18 +30,6 @@ class UserPreferenceTest < ActiveSupport::TestCase
       preference = UserPreference.new
       assert_equal false, preference.hide_mail
     end
-  end
-
-  def test_time_zone_should_default_to_setting
-    with_settings :default_users_time_zone => 'Paris' do
-      preference = UserPreference.new
-      assert_equal 'Paris', preference.time_zone
-    end
-  end
-
-  def test_no_self_notified_should_default_to_true
-    preference = UserPreference.new
-    assert_equal true, preference.no_self_notified
   end
 
   def test_create
@@ -79,6 +67,11 @@ class UserPreferenceTest < ActiveSupport::TestCase
     assert_kind_of Hash, up.others
   end
 
+  def test_others_should_be_blank_after_initialization
+    pref = User.new.pref
+    assert_equal({}, pref.others)
+  end
+
   def test_reading_value_from_nil_others_hash
     up = UserPreference.new(:user => User.new)
     up.others = nil
@@ -92,16 +85,5 @@ class UserPreferenceTest < ActiveSupport::TestCase
     assert_nil up.others
     up[:foo] = 'bar'
     assert_equal 'bar', up[:foo]
-  end
-
-  def test_removing_a_block_should_clear_its_settings
-    up = User.find(2).pref
-    up.my_page_layout = {'top' => ['news', 'documents']}
-    up.my_page_settings = {'news' => {:foo => 'bar'}, 'documents' => {:baz => 'quz'}}
-    up.save!
-
-    up.remove_block 'news'
-    up.save!
-    assert_equal ['documents'], up.my_page_settings.keys
   end
 end

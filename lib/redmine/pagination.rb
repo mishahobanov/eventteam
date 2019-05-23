@@ -1,7 +1,7 @@
 # encoding: utf-8
 #
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -67,10 +67,6 @@ module Redmine
         end
       end
 
-      def multiple_pages?
-        per_page < item_count
-      end
-
       def first_item
         item_count == 0 ? 0 : (offset + 1)
       end
@@ -116,11 +112,28 @@ module Redmine
     #
     def paginate(scope, options={})
       options = options.dup
+      finder_options = options.extract!(
+        :conditions,
+        :order,
+        :joins,
+        :include,
+        :select
+      )
+      if scope.is_a?(Symbol) || finder_options.values.compact.any?
+        return deprecated_paginate(scope, finder_options, options)
+      end
 
       paginator = paginator(scope.count, options)
       collection = scope.limit(paginator.per_page).offset(paginator.offset).to_a
 
       return paginator, collection
+    end
+
+    def deprecated_paginate(arg, finder_options, options={})
+      ActiveSupport::Deprecation.warn "#paginate with a Symbol and/or find options is depreceted and will be removed. Use a scope instead."
+      klass = arg.is_a?(Symbol) ? arg.to_s.classify.constantize : arg
+      scope = klass.scoped(finder_options)
+      paginate(scope, options)
     end
 
     def paginator(item_count, options={})
@@ -145,7 +158,7 @@ module Redmine
           if block_given?
             yield text, parameters, options
           else
-            link_to text, {:params => request.query_parameters.merge(parameters)}, options
+            link_to text, params.merge(parameters), options
           end
         end
       end
@@ -160,18 +173,13 @@ module Redmine
         page_param = paginator.page_param
 
         html = '<ul class="pages">'
-
-        if paginator.multiple_pages?
+        if paginator.previous_page
           # \xc2\xab(utf-8) = &#171;
           text = "\xc2\xab " + l(:label_previous)
-          if paginator.previous_page
-            html << content_tag('li',
-                                yield(text, {page_param => paginator.previous_page},
-                                      :accesskey => accesskey(:previous)),
-                                :class => 'previous page')
-          else
-            html << content_tag('li', content_tag('span', text), :class => 'previous')
-          end
+          html << content_tag('li',
+                              yield(text, {page_param => paginator.previous_page},
+                                    :accesskey => accesskey(:previous)),
+                              :class => 'previous page')
         end
 
         previous = nil
@@ -189,17 +197,13 @@ module Redmine
           previous = page
         end
 
-        if paginator.multiple_pages?
+        if paginator.next_page
           # \xc2\xbb(utf-8) = &#187;
           text = l(:label_next) + " \xc2\xbb"
-          if paginator.next_page
-            html << content_tag('li',
-                                yield(text, {page_param => paginator.next_page},
-                                      :accesskey => accesskey(:next)),
-                                :class => 'next page')
-          else
-            html << content_tag('li', content_tag('span', text), :class => 'next')
-          end
+          html << content_tag('li',
+                              yield(text, {page_param => paginator.next_page},
+                                    :accesskey => accesskey(:next)),
+                              :class => 'next page')
         end
         html << '</ul>'
 

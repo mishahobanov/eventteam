@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,8 +17,9 @@
 
 require File.expand_path('../../../test_helper', __FILE__)
 
-class QueriesHelperTest < Redmine::HelperTest
+class QueriesHelperTest < ActionView::TestCase
   include QueriesHelper
+  include Redmine::I18n
 
   fixtures :projects, :enabled_modules, :users, :members,
            :member_roles, :roles, :trackers, :issue_statuses,
@@ -61,8 +62,8 @@ class QueriesHelperTest < Redmine::HelperTest
   def test_filters_options_for_select_should_group_relations_filters
     with_locale 'en' do
       options = filters_options_for_select(IssueQuery.new)
-      assert_select_in options, 'optgroup[label=?]', 'Relations', 1
-      assert_select_in options, 'optgroup[label=?] > option', 'Relations', 11
+      assert_select_in options, 'optgroup[label=?]', 'Related issues', 1
+      assert_select_in options, 'optgroup[label=?] > option', 'Related issues', 11
       assert_select_in options, 'optgroup > option[value=relates]', :text => 'Related to'
     end
   end
@@ -88,7 +89,7 @@ class QueriesHelperTest < Redmine::HelperTest
     ]
 
     with_locale 'fr' do
-      csv = query_to_csv(issues, IssueQuery.new(:column_names => ['id', "cf_#{f.id}"]))
+      csv = query_to_csv(issues, IssueQuery.new, :columns => 'all')
       assert_include "Oui", csv
       assert_include "Non", csv
     end

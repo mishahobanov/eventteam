@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -34,8 +34,6 @@ module Redmine
                                  options.merge(:as => :container, :dependent => :destroy, :inverse_of => :container)
           send :include, Redmine::Acts::Attachable::InstanceMethods
           before_save :attach_saved_attachments
-          after_rollback :detach_saved_attachments
-          validate :warn_about_failed_attachments
         end
       end
 
@@ -84,18 +82,15 @@ module Redmine
             attachments = attachments.map(&:last)
           end
           if attachments.is_a?(Array)
-            @failed_attachment_count = 0
             attachments.each do |attachment|
               next unless attachment.is_a?(Hash)
               a = nil
               if file = attachment['file']
+                next unless file.size > 0
                 a = Attachment.create(:file => file, :author => author)
-              elsif token = attachment['token'].presence
+              elsif token = attachment['token']
                 a = Attachment.find_by_token(token)
-                unless a
-                  @failed_attachment_count += 1
-                  next
-                end
+                next unless a
                 a.filename = attachment['filename'] unless attachment['filename'].blank?
                 a.content_type = attachment['content_type'] unless attachment['content_type'].blank?
               end
@@ -114,20 +109,6 @@ module Redmine
         def attach_saved_attachments
           saved_attachments.each do |attachment|
             self.attachments << attachment
-          end
-        end
-
-        def detach_saved_attachments
-          saved_attachments.each do |attachment|
-            # TODO: use #reload instead, after upgrading to Rails 5
-            # (after_rollback is called when running transactional tests in Rails 4)
-            attachment.container = nil
-          end
-        end
-
-        def warn_about_failed_attachments
-          if @failed_attachment_count && @failed_attachment_count > 0
-            errors.add :base, ::I18n.t('warning_attachments_not_saved', count: @failed_attachment_count)
           end
         end
 

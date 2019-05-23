@@ -20,6 +20,7 @@ module Redmine
             attr_protected :watcher_ids, :watcher_user_ids
           end
           send :include, Redmine::Acts::Watchable::InstanceMethods
+          alias_method_chain :watcher_user_ids=, :uniq_ids
         end
       end
 
@@ -58,11 +59,11 @@ module Redmine
         end
 
         # Overrides watcher_user_ids= to make user_ids uniq
-        def watcher_user_ids=(user_ids)
+        def watcher_user_ids_with_uniq_ids=(user_ids)
           if user_ids.is_a?(Array)
             user_ids = user_ids.uniq
           end
-          super user_ids
+          send :watcher_user_ids_without_uniq_ids=, user_ids
         end
 
         # Returns true if object is watched by +user+

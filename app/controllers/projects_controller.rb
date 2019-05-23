@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,15 +18,20 @@
 class ProjectsController < ApplicationController
   menu_item :overview
   menu_item :settings, :only => :settings
-  menu_item :projects, :only => [:index, :new, :copy, :create]
 
-  before_action :find_project, :except => [ :index, :autocomplete, :list, :new, :create, :copy ]
-  before_action :authorize, :except => [ :index, :autocomplete, :list, :new, :create, :copy, :archive, :unarchive, :destroy]
-  before_action :authorize_global, :only => [:new, :create]
-  before_action :require_admin, :only => [ :copy, :archive, :unarchive, :destroy ]
+  before_filter :find_project, :except => [ :index, :list, :new, :create, :copy ]
+  before_filter :authorize, :except => [ :index, :list, :new, :create, :copy, :archive, :unarchive, :destroy]
+  before_filter :authorize_global, :only => [:new, :create]
+  before_filter :require_admin, :only => [ :copy, :archive, :unarchive, :destroy ]
   accept_rss_auth :index
   accept_api_auth :index, :show, :create, :update, :destroy
   require_sudo_mode :destroy
+
+  after_filter :only => [:create, :edit, :update, :archive, :unarchive, :destroy] do |controller|
+    if controller.request.post?
+      controller.send :expire_action, :controller => 'welcome', :action => 'robots'
+    end
+  end
 
   helper :custom_fields
   helper :issues
@@ -36,11 +41,6 @@ class ProjectsController < ApplicationController
 
   # Lists visible projects
   def index
-    # try to redirect to the requested menu item
-    if params[:jump] && redirect_to_menu_item(params[:jump])
-      return
-    end
-
     scope = Project.visible.sorted
 
     respond_to do |format|
@@ -58,18 +58,6 @@ class ProjectsController < ApplicationController
       format.atom {
         projects = scope.reorder(:created_on => :desc).limit(Setting.feeds_limit.to_i).to_a
         render_feed(projects, :title => "#{Setting.app_title}: #{l(:label_project_latest)}")
-      }
-    end
-  end
-
-  def autocomplete
-    respond_to do |format|
-      format.js {
-        if params[:q].present?
-          @projects = Project.visible.like(params[:q]).to_a
-        else
-          @projects = User.current.projects.to_a
-        end
       }
     end
   end
@@ -149,7 +137,7 @@ class ProjectsController < ApplicationController
     @users_by_role = @project.users_by_role
     @subprojects = @project.children.visible.to_a
     @news = @project.news.limit(5).includes(:author, :project).reorder("#{News.table_name}.created_on DESC").to_a
-    @trackers = @project.rolled_up_trackers.visible
+    @trackers = @project.rolled_up_trackers
 
     cond = @project.project_condition(Setting.display_subprojects_issues?)
 
@@ -173,10 +161,6 @@ class ProjectsController < ApplicationController
     @issue_category ||= IssueCategory.new
     @member ||= @project.members.new
     @trackers = Tracker.sorted.to_a
-
-    @version_status = params[:version_status] || 'open'
-    @version_name = params[:version_name]
-    @versions = @project.shared_versions.status(@version_status).like(@version_name)
     @wiki ||= @project.wiki || Wiki.new(:project => @project)
   end
 
@@ -214,14 +198,14 @@ class ProjectsController < ApplicationController
     unless @project.archive
       flash[:error] = l(:error_can_not_archive_project)
     end
-    redirect_to_referer_or admin_projects_path(:status => params[:status])
+    redirect_to admin_projects_path(:status => params[:status])
   end
 
   def unarchive
     unless @project.active?
       @project.unarchive
     end
-    redirect_to_referer_or admin_projects_path(:status => params[:status])
+    redirect_to admin_projects_path(:status => params[:status])
   end
 
   def close

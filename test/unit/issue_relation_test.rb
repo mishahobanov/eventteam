@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -63,20 +63,6 @@ class IssueRelationTest < ActiveSupport::TestCase
     assert_equal IssueRelation::TYPE_PRECEDES, relation.relation_type
     assert_equal to, relation.issue_from
     assert_equal from, relation.issue_to
-  end
-
-  def test_cannot_create_inverse_relates_relations
-    from = Issue.find(1)
-    to = Issue.find(2)
-
-    relation1 = IssueRelation.new :issue_from => from, :issue_to => to,
-                                  :relation_type => IssueRelation::TYPE_RELATES
-    assert relation1.save
-
-    relation2 = IssueRelation.new :issue_from => to, :issue_to => from,
-                                  :relation_type => IssueRelation::TYPE_RELATES
-    assert !relation2.save
-    assert_not_equal [], relation2.errors[:base]
   end
 
   def test_follows_relation_should_not_be_reversed_if_validation_fails

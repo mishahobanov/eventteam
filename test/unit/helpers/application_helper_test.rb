@@ -1,7 +1,7 @@
 # encoding: utf-8
 #
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -19,13 +19,13 @@
 
 require File.expand_path('../../../test_helper', __FILE__)
 
-class ApplicationHelperTest < Redmine::HelperTest
+class ApplicationHelperTest < ActionView::TestCase
+  include Redmine::I18n
   include ERB::Util
   include Rails.application.routes.url_helpers
 
-  fixtures :projects, :enabled_modules,
-           :users, :email_addresses,
-           :members, :member_roles, :roles,
+  fixtures :projects, :roles, :enabled_modules, :users,
+           :email_addresses,
            :repositories, :changesets,
            :projects_trackers,
            :trackers, :issue_statuses, :issues, :versions, :documents,
@@ -168,12 +168,6 @@ RAW
       assert_include %(<img src="/attachments/download/#{attachment.id}/caf%C3%A9.jpg" alt="" />),
         textilizable("![](café.jpg)", :attachments => [attachment])
     end
-  end
-
-  def test_attached_images_with_hires_naming
-    attachment = Attachment.generate!(:filename => 'image@2x.png')
-      assert_equal %(<p><img src="/attachments/download/#{attachment.id}/image@2x.png" srcset="/attachments/download/#{attachment.id}/image@2x.png 2x" alt="" /></p>),
-        textilizable("!image@2x.png!", :attachments => [attachment])
   end
 
   def test_attached_images_filename_extension
@@ -383,24 +377,10 @@ RAW
       # invalid expressions
       'source:'                     => 'source:',
       # url hash
-      "http://foo.bar/FAQ#3"        => '<a class="external" href="http://foo.bar/FAQ#3">http://foo.bar/FAQ#3</a>',
-      # user
-      'user:jsmith'                 => link_to_user(User.find_by_id(2)),
-      'user#2'                      => link_to_user(User.find_by_id(2)),
-      '@jsmith'                     => link_to_user(User.find_by_id(2)),
-      # invalid user
-      'user:foobar'                 => 'user:foobar',
+      "http://foo.bar/FAQ#3"       => '<a class="external" href="http://foo.bar/FAQ#3">http://foo.bar/FAQ#3</a>',
     }
     @project = Project.find(1)
     to_test.each { |text, result| assert_equal "<p>#{result}</p>", textilizable(text), "#{text} failed" }
-  end
-
-  def test_user_links_with_email_as_login_name_should_not_be_parsed
-    u = User.generate!(:login => 'jsmith@somenet.foo')
-    raw = "@jsmith@somenet.foo should not be parsed in jsmith@somenet.foo"
-
-    assert_match %r{<p><a class="user active".*>#{u.name}</a> should not be parsed in <a class="email" href="mailto:jsmith@somenet.foo">jsmith@somenet.foo</a></p>},
-      textilizable(raw, :project => Project.find(1))
   end
 
   def test_should_not_parse_redmine_links_inside_link
@@ -667,7 +647,7 @@ RAW
 
   def test_attachment_links
     text = 'attachment:error281.txt'
-    result = link_to("error281.txt", "/attachments/1/error281.txt",
+    result = link_to("error281.txt", "/attachments/download/1/error281.txt",
                      :class => "attachment")
     assert_equal "<p>#{result}</p>",
                  textilizable(text,
@@ -679,7 +659,7 @@ RAW
     set_tmp_attachments_directory
     a1 = Attachment.generate!(:filename => "test.txt", :created_on => 1.hour.ago)
     a2 = Attachment.generate!(:filename => "test.txt")
-    result = link_to("test.txt", "/attachments/#{a2.id}/test.txt",
+    result = link_to("test.txt", "/attachments/download/#{a2.id}/test.txt",
                      :class => "attachment")
     assert_equal "<p>#{result}</p>",
                  textilizable('attachment:test.txt', :attachments => [a1, a2])
@@ -1116,8 +1096,6 @@ EXPECTED
   end
 
   def test_table_of_content
-    set_language_if_valid 'en'
-
     raw = <<-RAW
 {{toc}}
 
@@ -1150,7 +1128,6 @@ h2. "Project Name !/attachments/1234/logo_small.gif! !/attachments/5678/logo_2.p
 RAW
 
     expected =  '<ul class="toc">' +
-                  '<li><strong>Table of contents</strong></li>' +
                   '<li><a href="#Title">Title</a>' +
                     '<ul>' +
                       '<li><a href="#Subtitle-with-a-Wiki-link">Subtitle with a Wiki link</a></li>' +
@@ -1180,8 +1157,6 @@ RAW
   end
 
   def test_table_of_content_should_generate_unique_anchors
-    set_language_if_valid 'en'
-
     raw = <<-RAW
 {{toc}}
 
@@ -1193,14 +1168,13 @@ h2. Subtitle
 RAW
 
     expected =  '<ul class="toc">' +
-                  '<li><strong>Table of contents</strong></li>' +
                   '<li><a href="#Title">Title</a>' +
                     '<ul>' +
                       '<li><a href="#Subtitle">Subtitle</a></li>' +
-                      '<li><a href="#Subtitle-2">Subtitle</a></li>' +
-                    '</ul>' +
+                      '<li><a href="#Subtitle-2">Subtitle</a></li>'
+                    '</ul>'
                   '</li>' +
-                '</ul>'
+               '</ul>'
 
     @project = Project.find(1)
     result = textilizable(raw).gsub("\n", "")
@@ -1210,8 +1184,6 @@ RAW
   end
 
   def test_table_of_content_should_contain_included_page_headings
-    set_language_if_valid 'en'
-
     raw = <<-RAW
 {{toc}}
 
@@ -1221,7 +1193,6 @@ h1. Included
 RAW
 
     expected = '<ul class="toc">' +
-               '<li><strong>Table of contents</strong></li>' +
                '<li><a href="#Included">Included</a></li>' +
                '<li><a href="#Child-page-1">Child page 1</a></li>' +
                '</ul>'
@@ -1277,14 +1248,14 @@ RAW
 
     # heading that contains inline code
     assert_match Regexp.new('<div class="contextual heading-2" title="Edit this section" id="section-4">' +
-      '<a class="icon-only icon-edit" href="/projects/1/wiki/Test/edit\?section=4">Edit this section</a></div>' +
+      '<a href="/projects/1/wiki/Test/edit\?section=4"><img src="/images/edit.png(\?\d+)?" alt="Edit" /></a></div>' +
       '<a name="Subtitle-with-inline-code"></a>' +
       '<h2 >Subtitle with <code>inline code</code><a href="#Subtitle-with-inline-code" class="wiki-anchor">&para;</a></h2>'),
       result
 
     # last heading
     assert_match Regexp.new('<div class="contextual heading-2" title="Edit this section" id="section-5">' +
-      '<a class="icon-only icon-edit" href="/projects/1/wiki/Test/edit\?section=5">Edit this section</a></div>' +
+      '<a href="/projects/1/wiki/Test/edit\?section=5"><img src="/images/edit.png(\?\d+)?" alt="Edit" /></a></div>' +
       '<a name="Subtitle-after-pre-tag"></a>' +
       '<h2 >Subtitle after pre tag<a href="#Subtitle-after-pre-tag" class="wiki-anchor">&para;</a></h2>'),
       result
@@ -1295,14 +1266,6 @@ RAW
       text = 'a *link*: http://www.example.net/'
       assert_equal '<p>a *link*: <a class="external" href="http://www.example.net/">http://www.example.net/</a></p>', textilizable(text)
     end
-  end
-
-  def test_textilizable_with_formatting_set_to_false_should_not_format_text
-    assert_equal '*text*', textilizable("*text*", :formatting => false)
-  end
-
-  def test_textilizable_with_formatting_set_to_true_should_format_text
-    assert_equal '<p><strong>text</strong></p>', textilizable("*text*", :formatting => true)
   end
 
   def test_parse_redmine_links_should_handle_a_tag_without_attributes
@@ -1341,11 +1304,6 @@ RAW
       assert !avatar('jsmith <jsmith@somenet.foo>', :class => 'picture').include?('class="gravatar"')
       assert_nil avatar('jsmith')
       assert_nil avatar(nil)
-      # Avatar for anonymous user
-      assert_match %r{src="/images/anonymous.png(\?\d+)?"}, avatar(User.anonymous)
-      # No avatar for groups
-      assert_nil avatar(Group.first)
-      assert avatar(User.anonymous, :size => 24).include?('width="24" height="24"')
     end
   end
 
@@ -1584,30 +1542,5 @@ RAW
     result = truncate_single_line_raw("#{ja}\n#{ja}\n#{ja}", 10)
     assert_equal "#{ja} #{ja}...", result
     assert !result.html_safe?
-  end
-
-  def test_back_url_should_remove_utf8_checkmark_from_referer
-    stubs(:request).returns(stub(:env => {'HTTP_REFERER' => "/path?utf8=\u2713&foo=bar"}))
-    assert_equal "/path?foo=bar", back_url
-  end
-
-  def test_hours_formatting
-    set_language_if_valid 'en'
-
-    with_settings :timespan_format => 'minutes' do
-      assert_equal '0:45', format_hours(0.75)
-      assert_equal '0:45 h', l_hours_short(0.75)
-      assert_equal '0:45 hour', l_hours(0.75)
-    end
-    with_settings :timespan_format => 'decimal' do
-      assert_equal '0.75', format_hours(0.75)
-      assert_equal '0.75 h', l_hours_short(0.75)
-      assert_equal '0.75 hour', l_hours(0.75)
-    end
-  end
-
-  def test_html_hours
-    assert_equal '<span class="hours hours-int">0</span><span class="hours hours-dec">:45</span>', html_hours('0:45')
-    assert_equal '<span class="hours hours-int">0</span><span class="hours hours-dec">.75</span>', html_hours('0.75')
   end
 end

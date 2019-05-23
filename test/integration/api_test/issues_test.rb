@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -46,7 +46,8 @@ class Redmine::ApiTest::IssuesTest < Redmine::ApiTest::Base
 
   test "GET /issues.xml should contain metadata" do
     get '/issues.xml'
-    assert_select 'issues[type=array][total_count][limit="25"][offset="0"]'
+    assert_select 'issues[type=array][total_count=?][limit="25"][offset="0"]',
+      assigns(:issue_count).to_s
   end
 
   test "GET /issues.xml with nometa param should not contain metadata" do
@@ -55,13 +56,15 @@ class Redmine::ApiTest::IssuesTest < Redmine::ApiTest::Base
   end
 
   test "GET /issues.xml with nometa header should not contain metadata" do
-    get '/issues.xml', :headers => {'X-Redmine-Nometa' => '1'}
+    get '/issues.xml', {}, {'X-Redmine-Nometa' => '1'}
     assert_select 'issues[type=array]:not([total_count]):not([limit]):not([offset])'
   end
 
   test "GET /issues.xml with offset and limit" do
     get '/issues.xml?offset=2&limit=3'
-    assert_select 'issues[type=array][total_count][limit="3"][offset="2"]'
+
+    assert_equal 3, assigns(:limit)
+    assert_equal 2, assigns(:offset)
     assert_select 'issues issue', 3
   end
 
@@ -82,24 +85,8 @@ class Redmine::ApiTest::IssuesTest < Redmine::ApiTest::Base
     end
   end
 
-  test "GET /issues.xml with attachments" do
-    get '/issues.xml?include=attachments'
-
-    assert_response :success
-    assert_equal 'application/xml', @response.content_type
-
-    assert_select 'issue id', :text => '3' do
-      assert_select '~ attachments attachment', 4
-    end
-
-    assert_select 'issue id', :text => '1' do
-      assert_select '~ attachments'
-      assert_select '~ attachments attachment', 0
-    end
-  end
-
   test "GET /issues.xml with invalid query params" do
-    get '/issues.xml', :params => {:f => ['start_date'], :op => {:start_date => '='}}
+    get '/issues.xml', {:f => ['start_date'], :op => {:start_date => '='}}
 
     assert_response :unprocessable_entity
     assert_equal 'application/xml', @response.content_type
@@ -108,7 +95,7 @@ class Redmine::ApiTest::IssuesTest < Redmine::ApiTest::Base
 
   test "GET /issues.xml with custom field filter" do
     get '/issues.xml',
-      :params => {:set_filter => 1, :f => ['cf_1'], :op => {:cf_1 => '='}, :v => {:cf_1 => ['MySQL']}}
+      {:set_filter => 1, :f => ['cf_1'], :op => {:cf_1 => '='}, :v => {:cf_1 => ['MySQL']}}
 
     expected_ids = Issue.visible.
         joins(:custom_values).
@@ -121,7 +108,7 @@ class Redmine::ApiTest::IssuesTest < Redmine::ApiTest::Base
   end
 
   test "GET /issues.xml with custom field filter (shorthand method)" do
-    get '/issues.xml', :params => {:cf_1 => 'MySQL'}
+    get '/issues.xml', {:cf_1 => 'MySQL'}
 
     expected_ids = Issue.visible.
         joins(:custom_values).
@@ -143,24 +130,21 @@ class Redmine::ApiTest::IssuesTest < Redmine::ApiTest::Base
     Issue.generate!(:subject => '1').update_column(:updated_on, Time.parse("2014-01-02T10:25:00Z"))
     Issue.generate!(:subject => '2').update_column(:updated_on, Time.parse("2014-01-02T12:13:00Z"))
 
-    get '/issues.xml', :params => {
-        :set_filter => 1, :f => ['updated_on'], :op => {:updated_on => '<='},
-        :v => {:updated_on => ['2014-01-02T12:00:00Z']}
-      }
+    get '/issues.xml',
+      {:set_filter => 1, :f => ['updated_on'], :op => {:updated_on => '<='},
+       :v => {:updated_on => ['2014-01-02T12:00:00Z']}}
     assert_select 'issues>issue', :count => 1
     assert_select 'issues>issue>subject', :text => '1'
 
-    get '/issues.xml', :params => {
-        :set_filter => 1, :f => ['updated_on'], :op => {:updated_on => '>='},
-        :v => {:updated_on => ['2014-01-02T12:00:00Z']}
-      }
+    get '/issues.xml',
+      {:set_filter => 1, :f => ['updated_on'], :op => {:updated_on => '>='},
+       :v => {:updated_on => ['2014-01-02T12:00:00Z']}}
     assert_select 'issues>issue', :count => 1
     assert_select 'issues>issue>subject', :text => '2'
 
-    get '/issues.xml', :params => {
-        :set_filter => 1, :f => ['updated_on'], :op => {:updated_on => '>='},
-        :v => {:updated_on => ['2014-01-02T08:00:00Z']}
-      }
+    get '/issues.xml',
+      {:set_filter => 1, :f => ['updated_on'], :op => {:updated_on => '>='},
+       :v => {:updated_on => ['2014-01-02T08:00:00Z']}}
     assert_select 'issues>issue', :count => 2
   end
 
@@ -185,23 +169,16 @@ class Redmine::ApiTest::IssuesTest < Redmine::ApiTest::Base
   end
 
   test "GET /issues/:id.xml with journals" do
-    Journal.find(2).update_attribute(:private_notes, true)
-
-    get '/issues/1.xml?include=journals', :headers => credentials('jsmith')
+    get '/issues/1.xml?include=journals'
 
     assert_select 'issue journals[type=array]' do
       assert_select 'journal[id="1"]' do
-        assert_select 'private_notes', :text => 'false'
         assert_select 'details[type=array]' do
           assert_select 'detail[name=status_id]' do
             assert_select 'old_value', :text => '1'
             assert_select 'new_value', :text => '2'
           end
         end
-      end
-      assert_select 'journal[id="2"]' do
-        assert_select 'private_notes', :text => 'true'
-        assert_select 'details[type=array]'
       end
     end
   end
@@ -345,7 +322,6 @@ class Redmine::ApiTest::IssuesTest < Redmine::ApiTest::Base
 
     json = ActiveSupport::JSON.decode(response.body)
     assert_kind_of Float, json['issue']['spent_hours']
-    assert_kind_of Float, json['issue']['total_spent_hours']
   end
 
   def test_show_should_include_issue_attributes
@@ -356,7 +332,7 @@ class Redmine::ApiTest::IssuesTest < Redmine::ApiTest::Base
   test "GET /issues/:id.xml?include=watchers should include watchers" do
     Watcher.create!(:user_id => 3, :watchable => Issue.find(1))
 
-    get '/issues/1.xml?include=watchers', :headers => credentials('jsmith')
+    get '/issues/1.xml?include=watchers', {}, credentials('jsmith')
 
     assert_response :ok
     assert_equal 'application/xml', response.content_type
@@ -374,46 +350,11 @@ class Redmine::ApiTest::IssuesTest < Redmine::ApiTest::Base
     Issue.find(1).changesets << Changeset.generate!(:repository => repository)
     assert Issue.find(1).changesets.any?
 
-    get '/issues/1.xml?include=changesets', :headers => credentials('jsmith')
+    get '/issues/1.xml?include=changesets', {}, credentials('jsmith')
 
     # the user jsmith has no permission to view the associated changeset
     assert_select 'issue changesets[type=array]' do
       assert_select 'changeset', 0
-    end
-  end
-
-  test "GET /issues/:id.xml should contains total_estimated_hours and total_spent_hours" do
-    parent = Issue.find(3)
-    parent.update_columns :estimated_hours => 2.0
-    child = Issue.generate!(:parent_issue_id => parent.id, :estimated_hours => 3.0)
-    TimeEntry.create!(:project => child.project, :issue => child, :user => child.author, :spent_on => child.author.today,
-                      :hours => '2.5', :comments => '', :activity_id => TimeEntryActivity.first.id)
-    get '/issues/3.xml'
-
-    assert_equal 'application/xml', response.content_type
-    assert_select 'issue' do
-      assert_select 'estimated_hours',       parent.estimated_hours.to_s
-      assert_select 'total_estimated_hours', (parent.estimated_hours.to_f + 3.0).to_s
-      assert_select 'spent_hours',           parent.spent_hours.to_s
-      assert_select 'total_spent_hours',     (parent.spent_hours.to_f + 2.5).to_s
-    end
-  end
-
-  test "GET /issues/:id.xml should contains total_estimated_hours, and should not contains spent_hours and total_spent_hours when permission does not exists" do
-    parent = Issue.find(3)
-    parent.update_columns :estimated_hours => 2.0
-    child = Issue.generate!(:parent_issue_id => parent.id, :estimated_hours => 3.0)
-    # remove permission!
-    Role.anonymous.remove_permission! :view_time_entries
-    #Role.all.each { |role| role.remove_permission! :view_time_entries }
-    get '/issues/3.xml'
-
-    assert_equal 'application/xml', response.content_type
-    assert_select 'issue' do
-      assert_select 'estimated_hours',       parent.estimated_hours.to_s
-      assert_select 'total_estimated_hours', (parent.estimated_hours.to_f + 3.0).to_s
-      assert_select 'spent_hours',           false
-      assert_select 'total_spent_hours',     false
     end
   end
 
@@ -425,46 +366,12 @@ class Redmine::ApiTest::IssuesTest < Redmine::ApiTest::Base
     TimeEntry.generate!(:user => user, :hours => 5.5, :issue_id => parent.id)
     TimeEntry.generate!(:user => user, :hours => 2, :issue_id => child.id)
     TimeEntry.generate!(:user => User.find(1), :hours => 100, :issue_id => child.id)
-    get '/issues/3.xml', :headers => credentials(user.login)
+    get '/issues/3.xml', {} , credentials(user.login)
 
     assert_equal 'application/xml', response.content_type
     assert_select 'issue' do
       assert_select 'spent_hours',           '5.5'
-      assert_select 'total_spent_hours',     '7.5'
     end
-  end
-
-  test "GET /issues/:id.json should contains total_estimated_hours and total_spent_hours" do
-    parent = Issue.find(3)
-    parent.update_columns :estimated_hours => 2.0
-    child = Issue.generate!(:parent_issue_id => parent.id, :estimated_hours => 3.0)
-    TimeEntry.create!(:project => child.project, :issue => child, :user => child.author, :spent_on => child.author.today,
-                      :hours => '2.5', :comments => '', :activity_id => TimeEntryActivity.first.id)
-    get '/issues/3.json'
-
-    assert_equal 'application/json', response.content_type
-    json = ActiveSupport::JSON.decode(response.body)
-    assert_equal parent.estimated_hours, json['issue']['estimated_hours']
-    assert_equal (parent.estimated_hours.to_f + 3.0), json['issue']['total_estimated_hours']
-    assert_equal parent.spent_hours, json['issue']['spent_hours']
-    assert_equal (parent.spent_hours.to_f + 2.5), json['issue']['total_spent_hours']
-  end
-
-  test "GET /issues/:id.json should contains total_estimated_hours, and should not contains spent_hours and total_spent_hours when permission does not exists" do
-    parent = Issue.find(3)
-    parent.update_columns :estimated_hours => 2.0
-    child = Issue.generate!(:parent_issue_id => parent.id, :estimated_hours => 3.0)
-    # remove permission!
-    Role.anonymous.remove_permission! :view_time_entries
-    #Role.all.each { |role| role.remove_permission! :view_time_entries }
-    get '/issues/3.json'
-
-    assert_equal 'application/json', response.content_type
-    json = ActiveSupport::JSON.decode(response.body)
-    assert_equal parent.estimated_hours, json['issue']['estimated_hours']
-    assert_equal (parent.estimated_hours.to_f + 3.0), json['issue']['total_estimated_hours']
-    assert_nil json['issue']['spent_hours']
-    assert_nil json['issue']['total_spent_hours']
   end
 
   test "GET /issues/:id.json should contains visible spent_hours only" do
@@ -475,12 +382,11 @@ class Redmine::ApiTest::IssuesTest < Redmine::ApiTest::Base
     TimeEntry.generate!(:user => user, :hours => 5.5, :issue_id => parent.id)
     TimeEntry.generate!(:user => user, :hours => 2, :issue_id => child.id)
     TimeEntry.generate!(:user => User.find(1), :hours => 100, :issue_id => child.id)
-    get '/issues/3.json', :headers => credentials(user.login)
+    get '/issues/3.json', {} , credentials(user.login)
 
     assert_equal 'application/json', response.content_type
     json = ActiveSupport::JSON.decode(response.body)
     assert_equal 5.5, json['issue']['spent_hours']
-    assert_equal 7.5, json['issue']['total_spent_hours']
   end
 
   test "POST /issues.xml should create an issue with the attributes" do
@@ -496,9 +402,7 @@ payload = <<-XML
 XML
 
     assert_difference('Issue.count') do
-      post '/issues.xml',
-        :params => payload,
-        :headers => {"CONTENT_TYPE" => 'application/xml'}.merge(credentials('jsmith'))
+      post '/issues.xml', payload, {"CONTENT_TYPE" => 'application/xml'}.merge(credentials('jsmith'))
     end
     issue = Issue.order('id DESC').first
     assert_equal 1, issue.project_id
@@ -514,13 +418,8 @@ XML
   test "POST /issues.xml with watcher_user_ids should create issue with watchers" do
     assert_difference('Issue.count') do
       post '/issues.xml',
-        :params => {
-          :issue => {
-            :project_id => 1, :subject => 'Watchers',
-            :tracker_id => 2, :status_id => 3, :watcher_user_ids => [3, 1]
-          }
-        },
-        :headers => credentials('jsmith')
+           {:issue => {:project_id => 1, :subject => 'Watchers',
+            :tracker_id => 2, :status_id => 3, :watcher_user_ids => [3, 1]}}, credentials('jsmith')
       assert_response :created
     end
     issue = Issue.order('id desc').first
@@ -530,9 +429,7 @@ XML
 
   test "POST /issues.xml with failure should return errors" do
     assert_no_difference('Issue.count') do
-      post '/issues.xml',
-        :params => {:issue => {:project_id => 1}},
-        :headers => credentials('jsmith')
+      post '/issues.xml', {:issue => {:project_id => 1}}, credentials('jsmith')
     end
 
     assert_select 'errors error', :text => "Subject cannot be blank"
@@ -552,9 +449,7 @@ payload = <<-JSON
 JSON
 
     assert_difference('Issue.count') do
-      post '/issues.json',
-        :params => payload,
-        :headers => {"CONTENT_TYPE" => 'application/json'}.merge(credentials('jsmith'))
+      post '/issues.json', payload, {"CONTENT_TYPE" => 'application/json'}.merge(credentials('jsmith'))
     end
 
     issue = Issue.order('id DESC').first
@@ -562,16 +457,6 @@ JSON
     assert_equal 2, issue.tracker_id
     assert_equal 3, issue.status_id
     assert_equal 'API test', issue.subject
-  end
-
-  test "POST /issues.json should accept project identifier as project_id" do
-    assert_difference('Issue.count') do
-      post '/issues.json',
-        :params => {:issue => {:project_id => 'subproject1', :tracker_id => 2, :subject => 'Foo'}},
-        :headers => credentials('jsmith')
-
-      assert_response :created
-    end
   end
 
   test "POST /issues.json without tracker_id should accept custom fields" do
@@ -595,9 +480,7 @@ payload = <<-JSON
 JSON
 
     assert_difference('Issue.count') do
-      post '/issues.json',
-        :params => payload,
-        :headers => {"CONTENT_TYPE" => 'application/json'}.merge(credentials('jsmith'))
+      post '/issues.json', payload, {"CONTENT_TYPE" => 'application/json'}.merge(credentials('jsmith'))
     end
 
     assert_response :created
@@ -610,8 +493,8 @@ JSON
 
     issue = new_record(Issue) do
       post '/issues.json',
-        :params => {:issue => {:project_id => 1, :subject => 'API', :custom_field_values => {}}},
-        :headers => credentials('jsmith')
+        {:issue => {:project_id => 1, :subject => 'API', :custom_field_values => {}}},
+        credentials('jsmith')
     end
     assert_equal "Default", issue.custom_field_value(field)
   end
@@ -621,17 +504,15 @@ JSON
 
     issue = new_record(Issue) do
       post '/issues.json',
-        :params => {:issue => {:project_id => 1, :subject => 'API', :custom_field_values => {field.id.to_s => ""}}},
-        :headers => credentials('jsmith')
+        {:issue => {:project_id => 1, :subject => 'API', :custom_field_values => {field.id.to_s => ""}}},
+        credentials('jsmith')
     end
     assert_equal "", issue.custom_field_value(field)
   end
 
   test "POST /issues.json with failure should return errors" do
     assert_no_difference('Issue.count') do
-      post '/issues.json',
-        :params => {:issue => {:project_id => 1}},
-        :headers => credentials('jsmith')
+      post '/issues.json', {:issue => {:project_id => 1}}, credentials('jsmith')
     end
 
     json = ActiveSupport::JSON.decode(response.body)
@@ -639,17 +520,15 @@ JSON
   end
 
   test "POST /issues.json with invalid project_id should respond with 422" do
-    post '/issues.json',
-      :params => {:issue => {:project_id => 999, :subject => "API"}},
-      :headers => credentials('jsmith')
+    post '/issues.json', {:issue => {:project_id => 999, :subject => "API"}}, credentials('jsmith')
     assert_response 422
   end
 
   test "PUT /issues/:id.xml" do
     assert_difference('Journal.count') do
       put '/issues/6.xml',
-        :params => {:issue => {:subject => 'API update', :notes => 'A new note'}},
-        :headers => credentials('jsmith')
+        {:issue => {:subject => 'API update', :notes => 'A new note'}},
+        credentials('jsmith')
     end
 
     issue = Issue.find(6)
@@ -660,12 +539,11 @@ JSON
 
   test "PUT /issues/:id.xml with custom fields" do
     put '/issues/3.xml',
-      :params => {:issue => {:custom_fields => [
+      {:issue => {:custom_fields => [
         {'id' => '1', 'value' => 'PostgreSQL' },
         {'id' => '2', 'value' => '150'}
-        ]}
-      },
-      :headers => credentials('jsmith')
+        ]}},
+      credentials('jsmith')
 
     issue = Issue.find(3)
     assert_equal '150', issue.custom_value_for(2).value
@@ -677,12 +555,11 @@ JSON
     field.update_attribute :multiple, true
 
     put '/issues/3.xml',
-      :params => {:issue => {:custom_fields => [
+      {:issue => {:custom_fields => [
         {'id' => '1', 'value' => ['MySQL', 'PostgreSQL'] },
         {'id' => '2', 'value' => '150'}
-        ]}
-      },
-      :headers => credentials('jsmith')
+        ]}},
+      credentials('jsmith')
 
     issue = Issue.find(3)
     assert_equal '150', issue.custom_value_for(2).value
@@ -691,8 +568,8 @@ JSON
 
   test "PUT /issues/:id.xml with project change" do
     put '/issues/3.xml',
-      :params => {:issue => {:project_id => 2, :subject => 'Project changed'}},
-      :headers => credentials('jsmith')
+      {:issue => {:project_id => 2, :subject => 'Project changed'}},
+      credentials('jsmith')
 
     issue = Issue.find(3)
     assert_equal 2, issue.project_id
@@ -702,8 +579,8 @@ JSON
   test "PUT /issues/:id.xml with notes only" do
     assert_difference('Journal.count') do
       put '/issues/6.xml',
-        :params => {:issue => {:notes => 'Notes only'}},
-        :headers => credentials('jsmith')
+        {:issue => {:notes => 'Notes only'}},
+        credentials('jsmith')
     end
 
     journal = Journal.last
@@ -717,8 +594,8 @@ JSON
 
     assert_difference('Journal.count') do
       put "/issues/#{issue.id}.json",
-        :params => {:issue => {:custom_field_values => {}, :notes => 'API'}},
-        :headers => credentials('jsmith')
+        {:issue => {:custom_field_values => {}, :notes => 'API'}},
+        credentials('jsmith')
     end
 
     assert_equal "", issue.reload.custom_field_value(field)
@@ -731,8 +608,8 @@ JSON
 
     assert_difference('Journal.count') do
       put "/issues/#{issue.id}.json",
-        :params => {:issue => {:custom_field_values => {field.id.to_s => ""}, :notes => 'API'}},
-        :headers => credentials('jsmith')
+        {:issue => {:custom_field_values => {field.id.to_s => ""}, :notes => 'API'}},
+        credentials('jsmith')
     end
 
     assert_equal "", issue.reload.custom_field_value(field)
@@ -744,8 +621,8 @@ JSON
 
     assert_difference('Journal.count') do
       put "/issues/#{issue.id}.json",
-        :params => {:issue => {:tracker_id => 2, :custom_field_values => {}, :notes => 'API'}},
-        :headers => credentials('jsmith')
+        {:issue => {:tracker_id => 2, :custom_field_values => {}, :notes => 'API'}},
+        credentials('jsmith')
     end
 
     assert_equal 2, issue.reload.tracker_id
@@ -758,8 +635,8 @@ JSON
 
     assert_difference('Journal.count') do
       put "/issues/#{issue.id}.json",
-        :params => {:issue => {:tracker_id => 2, :custom_field_values => {field.id.to_s => ""}, :notes => 'API'}},
-        :headers => credentials('jsmith')
+        {:issue => {:tracker_id => 2, :custom_field_values => {field.id.to_s => ""}, :notes => 'API'}},
+        credentials('jsmith')
     end
 
     assert_equal 2, issue.reload.tracker_id
@@ -767,29 +644,17 @@ JSON
   end
 
   test "PUT /issues/:id.xml with failed update" do
-    put '/issues/6.xml',
-      :params => {:issue => {:subject => ''}},
-      :headers => credentials('jsmith')
+    put '/issues/6.xml', {:issue => {:subject => ''}}, credentials('jsmith')
 
     assert_response :unprocessable_entity
     assert_select 'errors error', :text => "Subject cannot be blank"
   end
 
-  test "PUT /issues/:id.xml with invalid assignee should return error" do
-    user = User.generate!
-    put '/issues/6.xml',
-      :params => {:issue => {:assigned_to_id => user.id}},
-      :headers => credentials('jsmith')
-
-    assert_response :unprocessable_entity
-    assert_select 'errors error', :text => "Assignee is invalid"
-  end
-
   test "PUT /issues/:id.json" do
     assert_difference('Journal.count') do
       put '/issues/6.json',
-        :params => {:issue => {:subject => 'API update', :notes => 'A new note'}},
-        :headers => credentials('jsmith')
+        {:issue => {:subject => 'API update', :notes => 'A new note'}},
+        credentials('jsmith')
 
       assert_response :ok
       assert_equal '', response.body
@@ -802,9 +667,7 @@ JSON
   end
 
   test "PUT /issues/:id.json with failed update" do
-    put '/issues/6.json',
-      :params => {:issue => {:subject => ''}},
-      :headers => credentials('jsmith')
+    put '/issues/6.json', {:issue => {:subject => ''}}, credentials('jsmith')
 
     assert_response :unprocessable_entity
     json = ActiveSupport::JSON.decode(response.body)
@@ -813,7 +676,7 @@ JSON
 
   test "DELETE /issues/:id.xml" do
     assert_difference('Issue.count', -1) do
-      delete '/issues/6.xml', :headers => credentials('jsmith')
+      delete '/issues/6.xml', {}, credentials('jsmith')
 
       assert_response :ok
       assert_equal '', response.body
@@ -823,7 +686,7 @@ JSON
 
   test "DELETE /issues/:id.json" do
     assert_difference('Issue.count', -1) do
-      delete '/issues/6.json', :headers => credentials('jsmith')
+      delete '/issues/6.json', {}, credentials('jsmith')
 
       assert_response :ok
       assert_equal '', response.body
@@ -833,9 +696,7 @@ JSON
 
   test "POST /issues/:id/watchers.xml should add watcher" do
     assert_difference 'Watcher.count' do
-      post '/issues/1/watchers.xml',
-        :params => {:user_id => 3},
-        :headers => credentials('jsmith')
+      post '/issues/1/watchers.xml', {:user_id => 3}, credentials('jsmith')
 
       assert_response :ok
       assert_equal '', response.body
@@ -849,7 +710,7 @@ JSON
     Watcher.create!(:user_id => 3, :watchable => Issue.find(1))
 
     assert_difference 'Watcher.count', -1 do
-      delete '/issues/1/watchers/3.xml', :headers => credentials('jsmith')
+      delete '/issues/1/watchers/3.xml', {}, credentials('jsmith')
 
       assert_response :ok
       assert_equal '', response.body
@@ -864,10 +725,10 @@ JSON
     # create the issue with the upload's token
     assert_difference 'Issue.count' do
       post '/issues.xml',
-        :params => {:issue => {:project_id => 1, :subject => 'Uploaded file',
+           {:issue => {:project_id => 1, :subject => 'Uploaded file',
                        :uploads => [{:token => token, :filename => 'test.txt',
                                      :content_type => 'text/plain'}]}},
-        :headers => credentials('jsmith')
+           credentials('jsmith')
       assert_response :created
     end
     issue = Issue.order('id DESC').first
@@ -881,7 +742,7 @@ JSON
     assert_equal 2, attachment.author_id
 
     # get the issue with its attachments
-    get "/issues/#{issue.id}.xml?include=attachments"
+    get "/issues/#{issue.id}.xml", :include => 'attachments'
     assert_response :success
     xml = Hash.from_xml(response.body)
     attachments = xml['issue']['attachments']
@@ -920,9 +781,7 @@ JSON
 XML
 
     assert_difference 'Issue.count' do
-      post '/issues.xml',
-        :params => payload,
-        :headers => {"CONTENT_TYPE" => 'application/xml'}.merge(credentials('jsmith'))
+      post '/issues.xml', payload, {"CONTENT_TYPE" => 'application/xml'}.merge(credentials('jsmith'))
       assert_response :created
     end
     issue = Issue.order('id DESC').first
@@ -948,9 +807,7 @@ XML
 JSON
 
     assert_difference 'Issue.count' do
-      post '/issues.json',
-        :params => payload,
-        :headers => {"CONTENT_TYPE" => 'application/json'}.merge(credentials('jsmith'))
+      post '/issues.json', payload, {"CONTENT_TYPE" => 'application/json'}.merge(credentials('jsmith'))
       assert_response :created
     end
     issue = Issue.order('id DESC').first
@@ -964,10 +821,10 @@ JSON
     # update the issue with the upload's token
     assert_difference 'Journal.count' do
       put '/issues/1.xml',
-        :params => {:issue => {:notes => 'Attachment added',
+          {:issue => {:notes => 'Attachment added',
                       :uploads => [{:token => token, :filename => 'test.txt',
                                     :content_type => 'text/plain'}]}},
-        :headers => credentials('jsmith')
+          credentials('jsmith')
       assert_response :ok
       assert_equal '', @response.body
     end

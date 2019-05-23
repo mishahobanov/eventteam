@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,11 +17,10 @@
 
 class PrincipalMembershipsController < ApplicationController
   layout 'admin'
-  self.main_menu = false
 
-  before_action :require_admin
-  before_action :find_principal, :only => [:new, :create]
-  before_action :find_membership, :only => [:edit, :update, :destroy]
+  before_filter :require_admin
+  before_filter :find_principal, :only => [:new, :create]
+  before_filter :find_membership, :only => [:update, :destroy]
 
   def new
     @projects = Project.active.all
@@ -40,12 +39,8 @@ class PrincipalMembershipsController < ApplicationController
     end
   end
 
-  def edit
-    @roles = Role.givable.to_a
-  end
-
   def update
-    @membership.attributes = params.require(:membership).permit(:role_ids => [])
+    @membership.attributes = params[:membership]
     @membership.save
     respond_to do |format|
       format.html { redirect_to_principal @principal }

@@ -39,7 +39,7 @@
     <ul>
     <% @priorities.each do |p| -%>
         <li><%= context_menu_link p.name, bulk_update_issues_path(:ids => @issue_ids, :issue => {'priority_id' => p}, :back_url => @back), :method => :post,
-                                  :selected => (@issue && p == @issue.priority), :disabled => (!@can[:edit] || @issues.any?(&:priority_derived?)) %></li>
+                                  :selected => (@issue && p == @issue.priority), :disabled => (!@can[:edit] || @issues.detect {|i| !i.leaf?}) %></li>
     <% end -%>
     </ul>
   </li>
@@ -97,7 +97,7 @@
     <ul>
     <% (0..10).map{|x|x*10}.each do |p| -%>
         <li><%= context_menu_link "#{p}%", bulk_update_issues_path(:ids => @issue_ids, :issue => {'done_ratio' => p}, :back_url => @back), :method => :post,
-                                      :selected => (@issue && p == @issue.done_ratio), :disabled => (!@can[:edit] || @issues.any?(&:done_ratio_derived?)) %></li>
+                                      :selected => (@issue && p == @issue.done_ratio), :disabled => (!@can[:edit] || @issues.detect {|i| !i.leaf?}) %></li>
     <% end -%>
     </ul>
   </li>
@@ -117,25 +117,8 @@
     </li>
   <% end %>
 
-<% if @can[:add_watchers] %>
-  <li class="folder">
-    <a href="#" class="submenu"><%= l(:label_issue_watchers) %></a>
-    <ul>
-      <li><%= context_menu_link l(:button_add),
-                new_watchers_path(:object_type => 'issue', :object_id => @issue_ids),
-                :remote => true,
-                :class => 'icon-add' %></li>
-    </ul>
-  </li>
-<% end %>
-
 <% if User.current.logged? %>
   <li><%= watcher_link(@issues, User.current) %></li>
-<% end %>
-
-<% unless @issue %>
-  <li><%= context_menu_link l(:button_filter), _project_issues_path(@project, :set_filter => 1, :status_id => "*", :issue_id => @issue_ids.join(",")),
-          :class => 'icon-list' %></li>
 <% end %>
 
 <% if @issue.present? %>

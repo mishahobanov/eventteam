@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,7 +17,7 @@
 
 require File.expand_path('../../test_helper', __FILE__)
 
-class WelcomeControllerTest < Redmine::ControllerTest
+class WelcomeControllerTest < ActionController::TestCase
   fixtures :projects, :news, :users, :members
 
   def setup
@@ -28,32 +28,33 @@ class WelcomeControllerTest < Redmine::ControllerTest
   def test_index
     get :index
     assert_response :success
-    assert_select 'h3', :text => 'Latest news'
+    assert_template 'index'
+    assert_not_nil assigns(:news)
   end
 
   def test_browser_language
     @request.env['HTTP_ACCEPT_LANGUAGE'] = 'fr,fr-fr;q=0.8,en-us;q=0.5,en;q=0.3'
     get :index
-    assert_select 'html[lang=fr]'
+    assert_equal :fr, @controller.current_language
   end
 
   def test_browser_language_alternate
     @request.env['HTTP_ACCEPT_LANGUAGE'] = 'zh-TW'
     get :index
-    assert_select 'html[lang=zh-TW]'
+    assert_equal :"zh-TW", @controller.current_language
   end
 
   def test_browser_language_alternate_not_valid
     @request.env['HTTP_ACCEPT_LANGUAGE'] = 'fr-CA'
     get :index
-    assert_select 'html[lang=fr]'
+    assert_equal :fr, @controller.current_language
   end
 
   def test_browser_language_should_be_ignored_with_force_default_language_for_anonymous
     @request.env['HTTP_ACCEPT_LANGUAGE'] = 'fr,fr-fr;q=0.8,en-us;q=0.5,en;q=0.3'
     with_settings :force_default_language_for_anonymous => '1' do
       get :index
-      assert_select 'html[lang=en]'
+      assert_equal :en, @controller.current_language
     end
   end
 
@@ -63,7 +64,7 @@ class WelcomeControllerTest < Redmine::ControllerTest
     @request.env['HTTP_ACCEPT_LANGUAGE'] = 'fr,fr-fr;q=0.8,en-us;q=0.5,en;q=0.3'
     with_settings :default_language => 'fi' do
       get :index
-      assert_select 'html[lang=it]'
+      assert_equal :it, @controller.current_language
     end
   end
 
@@ -73,7 +74,7 @@ class WelcomeControllerTest < Redmine::ControllerTest
     @request.env['HTTP_ACCEPT_LANGUAGE'] = 'fr,fr-fr;q=0.8,en-us;q=0.5,en;q=0.3'
     with_settings :force_default_language_for_loggedin => '1', :default_language => 'fi' do
       get :index
-      assert_select 'html[lang=fi]'
+      assert_equal :fi, @controller.current_language
     end
   end
 
@@ -104,24 +105,6 @@ class WelcomeControllerTest < Redmine::ControllerTest
     assert_select 'script', :text => %r{warnLeavingUnsaved}, :count => 0
   end
 
-  def test_textarea_font_set_to_monospace
-    user = User.find(1)
-    user.pref.textarea_font = 'monospace'
-    user.pref.save!
-    @request.session[:user_id] = 1
-    get :index
-    assert_select 'body.textarea-monospace'
-  end
-
-  def test_textarea_font_set_to_proportional
-    user = User.find(1)
-    user.pref.textarea_font = 'proportional'
-    user.pref.save!
-    @request.session[:user_id] = 1
-    get :index
-    assert_select 'body.textarea-proportional'
-  end
-
   def test_logout_link_should_post
     @request.session[:user_id] = 2
 
@@ -138,8 +121,8 @@ class WelcomeControllerTest < Redmine::ControllerTest
     @request.session[:user_id] = 2
 
     get :index
-    assert_select "#header #project-jump" do
-      assert_select "a", :text => 'Foo & Bar'
+    assert_select "#header select" do
+      assert_select "option", :text => 'Foo & Bar'
     end
   end
 

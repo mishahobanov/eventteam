@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -21,7 +21,7 @@ class Redmine::ApiTest::MembershipsTest < Redmine::ApiTest::Base
   fixtures :projects, :users, :roles, :members, :member_roles
 
   test "GET /projects/:project_id/memberships.xml should return memberships" do
-    get '/projects/1/memberships.xml', :headers => credentials('jsmith')
+    get '/projects/1/memberships.xml', {}, credentials('jsmith')
 
     assert_response :success
     assert_equal 'application/xml', @response.content_type
@@ -32,7 +32,7 @@ class Redmine::ApiTest::MembershipsTest < Redmine::ApiTest::Base
   end
 
   test "GET /projects/:project_id/memberships.json should return memberships" do
-    get '/projects/1/memberships.json', :headers => credentials('jsmith')
+    get '/projects/1/memberships.json', {}, credentials('jsmith')
 
     assert_response :success
     assert_equal 'application/json', @response.content_type
@@ -54,13 +54,13 @@ class Redmine::ApiTest::MembershipsTest < Redmine::ApiTest::Base
     project = Project.find(1)
     project.close
     assert !project.reload.active?
-    get '/projects/1/memberships.json', :headers => credentials('jsmith')
+    get '/projects/1/memberships.json', {}, credentials('jsmith')
     assert_response :success
   end
 
   test "GET /projects/:project_id/memberships.xml should include locked users" do
     assert User.find(3).lock!
-    get '/projects/ecookbook/memberships.xml', :headers => credentials('jsmith')
+    get '/projects/ecookbook/memberships.xml', {}, credentials('jsmith')
     assert_response :success
     assert_select 'memberships[type=array] membership id', :text => '2' do
       assert_select '~ user[id="3"][name="Dave Lopper"]'
@@ -69,9 +69,7 @@ class Redmine::ApiTest::MembershipsTest < Redmine::ApiTest::Base
 
   test "POST /projects/:project_id/memberships.xml should create the membership" do
     assert_difference 'Member.count' do
-      post '/projects/1/memberships.xml',
-        :params => {:membership => {:user_id => 7, :role_ids => [2,3]}},
-        :headers => credentials('jsmith')
+      post '/projects/1/memberships.xml', {:membership => {:user_id => 7, :role_ids => [2,3]}}, credentials('jsmith')
 
       assert_response :created
     end
@@ -81,9 +79,7 @@ class Redmine::ApiTest::MembershipsTest < Redmine::ApiTest::Base
     group = Group.find(11)
 
     assert_difference 'Member.count', 1 + group.users.count do
-      post '/projects/1/memberships.xml',
-        :params => {:membership => {:user_id => 11, :role_ids => [2,3]}},
-        :headers => credentials('jsmith')
+      post '/projects/1/memberships.xml', {:membership => {:user_id => 11, :role_ids => [2,3]}}, credentials('jsmith')
 
       assert_response :created
     end
@@ -91,9 +87,7 @@ class Redmine::ApiTest::MembershipsTest < Redmine::ApiTest::Base
 
   test "POST /projects/:project_id/memberships.xml with invalid parameters should return errors" do
     assert_no_difference 'Member.count' do
-      post '/projects/1/memberships.xml',
-        :params => {:membership => {:role_ids => [2,3]}},
-        :headers => credentials('jsmith')
+      post '/projects/1/memberships.xml', {:membership => {:role_ids => [2,3]}}, credentials('jsmith')
 
       assert_response :unprocessable_entity
       assert_equal 'application/xml', @response.content_type
@@ -102,7 +96,7 @@ class Redmine::ApiTest::MembershipsTest < Redmine::ApiTest::Base
   end
 
   test "GET /memberships/:id.xml should return the membership" do
-    get '/memberships/2.xml', :headers => credentials('jsmith')
+    get '/memberships/2.xml', {}, credentials('jsmith')
 
     assert_response :success
     assert_equal 'application/xml', @response.content_type
@@ -113,7 +107,7 @@ class Redmine::ApiTest::MembershipsTest < Redmine::ApiTest::Base
   end
 
   test "GET /memberships/:id.json should return the membership" do
-    get '/memberships/2.json', :headers => credentials('jsmith')
+    get '/memberships/2.json', {}, credentials('jsmith')
 
     assert_response :success
     assert_equal 'application/json', @response.content_type
@@ -131,9 +125,7 @@ class Redmine::ApiTest::MembershipsTest < Redmine::ApiTest::Base
   test "PUT /memberships/:id.xml should update the membership" do
     assert_not_equal [1,2], Member.find(2).role_ids.sort
     assert_no_difference 'Member.count' do
-      put '/memberships/2.xml',
-        :params => {:membership => {:user_id => 3, :role_ids => [1,2]}},
-        :headers => credentials('jsmith')
+      put '/memberships/2.xml', {:membership => {:user_id => 3, :role_ids => [1,2]}}, credentials('jsmith')
 
       assert_response :ok
       assert_equal '', @response.body
@@ -143,9 +135,7 @@ class Redmine::ApiTest::MembershipsTest < Redmine::ApiTest::Base
   end
 
   test "PUT /memberships/:id.xml with invalid parameters should return errors" do
-    put '/memberships/2.xml',
-      :params => {:membership => {:user_id => 3, :role_ids => [99]}},
-      :headers => credentials('jsmith')
+    put '/memberships/2.xml', {:membership => {:user_id => 3, :role_ids => [99]}}, credentials('jsmith')
 
     assert_response :unprocessable_entity
     assert_equal 'application/xml', @response.content_type
@@ -154,7 +144,7 @@ class Redmine::ApiTest::MembershipsTest < Redmine::ApiTest::Base
 
   test "DELETE /memberships/:id.xml should destroy the membership" do
     assert_difference 'Member.count', -1 do
-      delete '/memberships/2.xml', :headers => credentials('jsmith')
+      delete '/memberships/2.xml', {}, credentials('jsmith')
 
       assert_response :ok
       assert_equal '', @response.body
@@ -166,7 +156,7 @@ class Redmine::ApiTest::MembershipsTest < Redmine::ApiTest::Base
     assert_no_difference 'Member.count' do
       # A membership with an inherited role cannot be deleted
       Member.find(2).member_roles.first.update_attribute :inherited_from, 99
-      delete '/memberships/2.xml', :headers => credentials('jsmith')
+      delete '/memberships/2.xml', {}, credentials('jsmith')
 
       assert_response :unprocessable_entity
     end

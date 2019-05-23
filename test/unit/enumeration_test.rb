@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -154,8 +154,7 @@ class EnumerationTest < ActiveSupport::TestCase
     a = IssuePriority.create!(:name => 'A')
     b = IssuePriority.create!(:name => 'B')
     override = IssuePriority.create!(:name => 'BB', :parent_id => b.id)
-    b.position -= 1
-    b.save!
+    b.move_to = 'higher'
 
     assert_equal [2, 1, 1], [a, b, override].map(&:reload).map(&:position)
   end

@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -22,7 +22,7 @@ class Enumeration < ActiveRecord::Base
 
   belongs_to :project
 
-  acts_as_positioned :scope => :parent_id
+  acts_as_list :scope => 'type = \'#{type}\' AND #{parent_id ? "parent_id = #{parent_id}" : "parent_id IS NULL"}'
   acts_as_customizable
   acts_as_tree
 
@@ -129,38 +129,33 @@ class Enumeration < ActiveRecord::Base
     return new == previous
   end
 
-  private
+  # Overrides acts_as_list reset_positions_in_list so that enumeration overrides
+  # get the same position as the overriden enumeration
+  def reset_positions_in_list
+    acts_as_list_class.where(scope_condition).reorder("#{position_column} ASC, id ASC").each_with_index do |item, i|
+      acts_as_list_class.where("id = :id OR parent_id = :id", :id => item.id).
+        update_all({position_column => (i + 1)})
+    end
+  end
 
+private
   def check_integrity
     raise "Cannot delete enumeration" if self.in_use?
   end
 
-  # Overrides Redmine::Acts::Positioned#set_default_position so that enumeration overrides
-  # get the same position as the overridden enumeration
-  def set_default_position
-    if position.nil? && parent
-      self.position = parent.position
-    end
-    super
-  end
-
-  # Overrides Redmine::Acts::Positioned#update_position so that overrides get the same
-  # position as the overridden enumeration
-  def update_position
-    super
-    if position_changed?
-      self.class.where.not(:parent_id => nil).update_all(
-        "position = coalesce((
-          select position
-          from (select id, position from enumerations) as parent
-          where parent_id = parent.id), 1)"
-      )
+  # Overrides acts_as_list add_to_list_bottom so that enumeration overrides
+  # get the same position as the overriden enumeration
+  def add_to_list_bottom
+    if parent
+      self[position_column] = parent.position
+    else
+      super
     end
   end
 
-  # Overrides Redmine::Acts::Positioned#remove_position so that enumeration overrides
-  # get the same position as the overridden enumeration
-  def remove_position
+  # Overrides acts_as_list remove_from_list so that enumeration overrides
+  # get the same position as the overriden enumeration
+  def remove_from_list
     if parent_id.blank?
       super
     end

@@ -1,7 +1,6 @@
 <%= labelled_fields_for :issue, @issue do |f| %>
 <%= call_hook(:view_issues_form_details_top, { :issue => @issue, :form => f }) %>
 <%= hidden_field_tag 'form_update_triggered_by', '' %>
-<%= hidden_field_tag 'back_url', params[:back_url], :id => nil if params[:back_url].present? %>
 
 <% if @issue.safe_attribute? 'is_private' %>
 <p id="issue_is_private_wrap">
@@ -9,13 +8,13 @@
 </p>
 <% end %>
 
-<% if (@issue.safe_attribute?('project_id') || @issue.project_id_changed?) && (!@issue.new_record? || @project.nil? || @issue.copy?) %>
+<% if @issue.safe_attribute?('project_id') && (!@issue.new_record? || @project.nil? || @issue.copy?) %>
 <p><%= f.select :project_id, project_tree_options_for_select(@issue.allowed_target_projects, :selected => @issue.project), {:required => true},
                 :onchange => "updateIssueFrom('#{escape_javascript update_issue_form_path(@project, @issue)}', this)" %></p>
 <% end %>
 
-<% if @issue.safe_attribute?('tracker_id') || (@issue.persisted? && @issue.tracker_id_changed?) %>
-<p><%= f.select :tracker_id, trackers_options_for_select(@issue), {:required => true},
+<% if @issue.safe_attribute? 'tracker_id' %>
+<p><%= f.select :tracker_id, @issue.project.trackers.collect {|t| [t.name, t.id]}, {:required => true},
                 :onchange => "updateIssueFrom('#{escape_javascript update_issue_form_path(@project, @issue)}', this)" %></p>
 <% end %>
 
@@ -30,7 +29,7 @@
   <%= content_tag 'span', :id => "issue_description_and_toolbar", :style => (@issue.new_record? ? nil : 'display:none') do %>
     <%= f.text_area :description,
                    :cols => 60,
-                   :rows => [[10, @issue.description.to_s.length / 50].max, 20].min,
+                   :rows => (@issue.description.blank? ? 10 : [[10, @issue.description.length / 50].max, 100].min),
                    :accesskey => accesskey(:edit),
                    :class => 'wiki-edit',
                    :no_label => true %>

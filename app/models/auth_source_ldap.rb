@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -56,16 +56,11 @@ class AuthSourceLdap < AuthSource
     raise AuthSourceException.new(e.message)
   end
 
-  # Test the connection to the LDAP
+  # test the connection to the LDAP
   def test_connection
     with_timeout do
       ldap_con = initialize_ldap_con(self.account, self.account_password)
       ldap_con.open { }
-
-      if self.account.present? && !self.account.include?("$login") && self.account_password.present?
-        ldap_auth = authenticate_dn(self.account, self.account_password)
-        raise AuthSourceException.new(l(:error_ldap_bind_credentials)) if !ldap_auth
-      end
     end
   rescue *NETWORK_EXCEPTIONS => e
     raise AuthSourceException.new(e.message)

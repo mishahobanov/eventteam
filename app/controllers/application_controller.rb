@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -51,7 +51,7 @@ class ApplicationController < ActionController::Base
     end
   end
 
-  before_action :session_expiration, :user_setup, :check_if_login_required, :set_localization, :check_password_change
+  before_filter :session_expiration, :user_setup, :check_if_login_required, :check_password_change, :set_localization
 
   rescue_from ::Unauthorized, :with => :deny_access
   rescue_from ::ActionView::MissingTemplate, :with => :missing_template
@@ -133,8 +133,6 @@ class ApplicationController < ActionController::Base
         end
       end
     end
-    # store current ip address in user object ephemerally
-    user.remote_ip = request.remote_ip if user
     user
   end
 
@@ -168,10 +166,9 @@ class ApplicationController < ActionController::Base
   # Logs out current user
   def logout_user
     if User.current.logged?
-      if autologin = cookies.delete(autologin_cookie_name)
-        User.current.delete_autologin_token(autologin)
-      end
-      User.current.delete_session_token(session[:tk])
+      cookies.delete(autologin_cookie_name)
+      Token.delete_all(["user_id = ? AND action = ?", User.current.id, 'autologin'])
+      Token.delete_all(["user_id = ? AND action = ? AND value = ?", User.current.id, 'session', session[:tk]])
       self.logged_user = nil
     end
   end
@@ -214,7 +211,7 @@ class ApplicationController < ActionController::Base
     if !User.current.logged?
       # Extract only the basic url parameters on non-GET requests
       if request.get?
-        url = request.original_url
+        url = url_for(params)
       else
         url = url_for(:controller => params[:controller], :action => params[:action], :id => params[:id], :project_id => params[:project_id])
       end
@@ -353,24 +350,8 @@ class ApplicationController < ActionController::Base
     @attachments = att || []
   end
 
-  def parse_params_for_bulk_update(params)
-    attributes = (params || {}).reject {|k,v| v.blank?}
-    attributes.keys.each {|k| attributes[k] = '' if attributes[k] == 'none'}
-    if custom = attributes[:custom_field_values]
-      custom.reject! {|k,v| v.blank?}
-      custom.keys.each do |k|
-        if custom[k].is_a?(Array)
-          custom[k] << '' if custom[k].delete('__none__')
-        else
-          custom[k] = '' if custom[k] == '__none__'
-        end
-      end
-    end
-    attributes
-  end
-
   # make sure that the user is a member of the project (or admin) if project is private
-  # used as a before_action for actions that do not require any particular permission on the project
+  # used as a before_filter for actions that do not require any particular permission on the project
   def check_project_privacy
     if @project && !@project.archived?
       if @project.visible?
@@ -435,7 +416,7 @@ class ApplicationController < ActionController::Base
       return false
     end
 
-    if path.match(%r{/(login|account/register|account/lost_password)})
+    if path.match(%r{/(login|account/register)})
       return false
     end
 
@@ -454,16 +435,14 @@ class ApplicationController < ActionController::Base
 
   # Redirects to the request referer if present, redirects to args or call block otherwise.
   def redirect_to_referer_or(*args, &block)
-    if referer = request.headers["Referer"]
-      redirect_to referer
+    redirect_to :back
+  rescue ::ActionController::RedirectBackError
+    if args.any?
+      redirect_to *args
+    elsif block_given?
+      block.call
     else
-      if args.any?
-        redirect_to *args
-      elsif block_given?
-        block.call
-      else
-        raise "#redirect_to_referer_or takes arguments or a block"
-      end
+      raise "#redirect_to_referer_or takes arguments or a block"
     end
   end
 
@@ -645,18 +624,20 @@ class ApplicationController < ActionController::Base
   # Rescues an invalid query statement. Just in case...
   def query_statement_invalid(exception)
     logger.error "Query::StatementInvalid: #{exception.message}" if logger
-    session.delete(:issue_query)
+    session.delete(:query)
+    sort_clear if respond_to?(:sort_clear)
     render_error "An error occurred while executing the query and has been logged. Please report this error to your Redmine administrator."
   end
 
-  # Renders a 200 response for successful updates or deletions via the API
+  # Renders a 200 response for successfull updates or deletions via the API
   def render_api_ok
     render_api_head :ok
   end
 
   # Renders a head API response
   def render_api_head(status)
-    head status
+    # #head would return a response body with one space
+    render :text => '', :status => status, :layout => nil
   end
 
   # Renders API response on validation failure

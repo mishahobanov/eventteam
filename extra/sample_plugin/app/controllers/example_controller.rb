@@ -1,7 +1,9 @@
 # Sample plugin controller
 class ExampleController < ApplicationController
+  unloadable
+
   layout 'base'
-  before_action :find_project, :authorize
+  before_filter :find_project, :authorize
   menu_item :sample_plugin
 
   def say_hello

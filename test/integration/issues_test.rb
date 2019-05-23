@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -40,26 +40,25 @@ class IssuesTest < Redmine::IntegrationTest
 
     get '/projects/ecookbook/issues/new'
     assert_response :success
+    assert_template 'issues/new'
 
     issue = new_record(Issue) do
-      post '/projects/ecookbook/issues', :params => {
-          :issue => {
-            :tracker_id => "1",
-            :start_date => "2006-12-26",
-            :priority_id => "4",
-            :subject => "new test issue",
-            :category_id => "",
-            :description => "new issue",
-            :done_ratio => "0",
-            :due_date => "",
-            :assigned_to_id => "",
-            :custom_field_values => {'2' => 'Value for field 2'}
-          }
-        }
+      post '/projects/ecookbook/issues',
+                                 :issue => { :tracker_id => "1",
+                                             :start_date => "2006-12-26",
+                                             :priority_id => "4",
+                                             :subject => "new test issue",
+                                             :category_id => "",
+                                             :description => "new issue",
+                                             :done_ratio => "0",
+                                             :due_date => "",
+                                             :assigned_to_id => "" },
+                                 :custom_fields => {'2' => 'Value for field 2'}
     end
     # check redirection
     assert_redirected_to :controller => 'issues', :action => 'show', :id => issue
     follow_redirect!
+    assert_equal issue, assigns(:issue)
 
     # check issue attributes
     assert_equal 'jsmith', issue.author.login
@@ -71,12 +70,7 @@ class IssuesTest < Redmine::IntegrationTest
     Role.anonymous.remove_permission! :add_issues
 
     assert_no_difference 'Issue.count' do
-      post '/projects/1/issues', :params => {
-          :issue => {
-            :tracker_id => "1",
-            :subject => "new test issue"
-          }
-        }
+      post '/projects/1/issues', :tracker_id => "1", :issue => {:subject => "new test issue"}
     end
     assert_response 302
   end
@@ -86,12 +80,7 @@ class IssuesTest < Redmine::IntegrationTest
     Member.create!(:project_id => 1, :principal => Group.anonymous, :role_ids => [3])
 
     issue = new_record(Issue) do
-      post '/projects/1/issues', :params => {
-          :issue => {
-            :tracker_id => "1",
-            :subject => "new test issue"
-          }
-        }
+      post '/projects/1/issues', :tracker_id => "1", :issue => {:subject => "new test issue"}
       assert_response 302
     end
     assert_equal User.anonymous, issue.author
@@ -103,10 +92,9 @@ class IssuesTest < Redmine::IntegrationTest
     set_tmp_attachments_directory
 
     attachment = new_record(Attachment) do
-      put '/issues/1', :params => {
-          :issue => {:notes => 'Some notes'},
-          :attachments => {'1' => {'file' => uploaded_test_file('testfile.txt', 'text/plain'), 'description' => 'This is an attachment'}}
-        }
+      put '/issues/1',
+           :notes => 'Some notes',
+           :attachments => {'1' => {'file' => uploaded_test_file('testfile.txt', 'text/plain'), 'description' => 'This is an attachment'}}
       assert_redirected_to "/issues/1"
     end
 
@@ -144,7 +132,6 @@ class IssuesTest < Redmine::IntegrationTest
       get '/issues/5'
       assert_response :success
       assert_select '.next-prev-links .position', :text => '3 of 5'
-      assert_select '.next-prev-links .position a[href^=?]', '/projects/ecookbook/issues?'
     end
   end
 
@@ -174,12 +161,10 @@ class IssuesTest < Redmine::IntegrationTest
   end
 
   def test_other_formats_links_on_index_without_project_id_in_url
-    get '/issues', :params => {
-        :project_id => 'ecookbook'
-      }
+    get '/issues', :project_id => 'ecookbook'
 
     %w(Atom PDF CSV).each do |format|
-      assert_select 'a[rel=nofollow][href=?]', "/issues.#{format.downcase}?project_id=ecookbook", :text => format
+      assert_select 'a[rel=nofollow][href=?]', "/projects/ecookbook/issues.#{format.downcase}", :text => format
     end
   end
 
@@ -191,44 +176,18 @@ class IssuesTest < Redmine::IntegrationTest
     end
   end
 
-  def test_pagination_links_should_preserve_query_parameters
+  def test_pagination_links_on_index_without_project_id_in_url
     with_settings :per_page_options => '2' do
-      get '/projects/ecookbook/issues?foo=bar'
-
-      assert_select 'a[href=?]', '/projects/ecookbook/issues?foo=bar&page=2', :text => '2'
+      get '/issues', :project_id => 'ecookbook'
+  
+      assert_select 'a[href=?]', '/projects/ecookbook/issues?page=2', :text => '2'
     end
-  end
-
-  def test_pagination_links_should_not_use_params_as_url_options
-    with_settings :per_page_options => '2' do
-      get '/projects/ecookbook/issues?host=foo'
-
-      assert_select 'a[href=?]', '/projects/ecookbook/issues?host=foo&page=2', :text => '2'
-    end
-  end
-
-  def test_sort_links_on_index
-    get '/projects/ecookbook/issues'
-
-    assert_select 'a[href=?]', '/projects/ecookbook/issues?sort=subject%2Cid%3Adesc', :text => 'Subject'
-  end
-
-  def test_sort_links_should_preserve_query_parameters
-    get '/projects/ecookbook/issues?foo=bar'
-
-    assert_select 'a[href=?]', '/projects/ecookbook/issues?foo=bar&sort=subject%2Cid%3Adesc', :text => 'Subject'
-  end
-
-  def test_sort_links_should_not_use_params_as_url_options
-    get '/projects/ecookbook/issues?host=foo'
-
-    assert_select 'a[href=?]', '/projects/ecookbook/issues?host=foo&sort=subject%2Cid%3Adesc', :text => 'Subject'
   end
 
   def test_issue_with_user_custom_field
     @field = IssueCustomField.create!(:name => 'Tester', :field_format => 'user', :is_for_all => true, :trackers => Tracker.all)
     Role.anonymous.add_permission! :add_issues, :edit_issues
-    users = Project.find(1).users.sort
+    users = Project.find(1).users.uniq.sort
     tester = users.first
 
     # Issue form
@@ -241,13 +200,12 @@ class IssuesTest < Redmine::IntegrationTest
 
     # Create issue
     issue = new_record(Issue) do
-      post '/projects/ecookbook/issues', :params => {
-          :issue => {
-            :tracker_id => '1',
-            :priority_id => '4',
-            :subject => 'Issue with user custom field',
-            :custom_field_values => {@field.id.to_s => users.first.id.to_s}
-          }
+      post '/projects/ecookbook/issues',
+        :issue => {
+          :tracker_id => '1',
+          :priority_id => '4',
+          :subject => 'Issue with user custom field',
+          :custom_field_values => {@field.id.to_s => users.first.id.to_s}
         }
       assert_response 302
     end
@@ -267,12 +225,11 @@ class IssuesTest < Redmine::IntegrationTest
     with_settings :default_language => 'en' do
       # Update issue
       assert_difference 'Journal.count' do
-        put "/issues/#{issue.id}", :params => {
+        put "/issues/#{issue.id}",
+            :notes => 'Updating custom field',
             :issue => {
-              :notes => 'Updating custom field',
-              :custom_field_values => {@field.id.to_s => new_tester.id.to_s}
-            }
-          }
+                :custom_field_values => {@field.id.to_s => new_tester.id.to_s}
+              }
         assert_redirected_to "/issues/#{issue.id}"
       end
       # Issue view
@@ -282,23 +239,20 @@ class IssuesTest < Redmine::IntegrationTest
   end
 
   def test_update_using_invalid_http_verbs
-    log_user('jsmith', 'jsmith')
     subject = 'Updated by an invalid http verb'
 
-    get '/issues/update/1', :params => {:issue => {:subject => subject}}
+    get '/issues/update/1', {:issue => {:subject => subject}}, credentials('jsmith')
     assert_response 404
     assert_not_equal subject, Issue.find(1).subject
 
-    post '/issues/1', :params => {:issue => {:subject => subject}}
+    post '/issues/1', {:issue => {:subject => subject}}, credentials('jsmith')
     assert_response 404
     assert_not_equal subject, Issue.find(1).subject
   end
 
   def test_get_watch_should_be_invalid
-    log_user('jsmith', 'jsmith')
-
     assert_no_difference 'Watcher.count' do
-      get '/watchers/watch?object_type=issue&object_id=1'
+      get '/watchers/watch?object_type=issue&object_id=1', {}, credentials('jsmith')
       assert_response 404
     end
   end

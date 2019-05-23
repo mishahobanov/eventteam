@@ -1,7 +1,7 @@
 # encoding: utf-8
 #
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -26,7 +26,7 @@ module Redmine
           pdf = Redmine::Export::PDF::ITCPDF.new(current_language)
           pdf.set_title(project.name)
           pdf.alias_nb_pages
-          pdf.footer_date = format_date(User.current.today)
+          pdf.footer_date = format_date(Date.today)
           pdf.add_page
           pdf.SetFontStyle('B',11)
           pdf.RDMMultiCell(190,5, project.name)
@@ -43,7 +43,7 @@ module Redmine
           pdf = ITCPDF.new(current_language)
           pdf.set_title("#{project} - #{page.title}")
           pdf.alias_nb_pages
-          pdf.footer_date = format_date(User.current.today)
+          pdf.footer_date = format_date(Date.today)
           pdf.add_page
           pdf.SetFontStyle('B',11)
           pdf.RDMMultiCell(190,5,

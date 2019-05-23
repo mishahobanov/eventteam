@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -59,8 +59,8 @@ module Redmine
             @month_from = 1
           end
         else
-          @month_from ||= User.current.today.month
-          @year_from ||= User.current.today.year
+          @month_from ||= Date.today.month
+          @year_from ||= Date.today.year
         end
         zoom = (options[:zoom] || User.current.pref[:gantt_zoom]).to_i
         @zoom = (zoom > 0 && zoom < 5) ? zoom : 2
@@ -168,7 +168,7 @@ module Redmine
             joins("LEFT JOIN #{Project.table_name} child ON #{Project.table_name}.lft <= child.lft AND #{Project.table_name}.rgt >= child.rgt").
             where("child.id IN (?)", ids).
             order("#{Project.table_name}.lft ASC").
-            distinct.
+            uniq.
             to_a
         else
           @projects = []
@@ -314,10 +314,7 @@ module Redmine
       def line_for_issue(issue, options)
         # Skip issues that don't have a due_before (due_date or version's due_date)
         if issue.is_a?(Issue) && issue.due_before
-          label = issue.status.name.dup
-          unless issue.disabled_core_fields.include?('done_ratio')
-            label << " #{issue.done_ratio}%"
-          end
+          label = "#{issue.status.name} #{issue.done_ratio}%"
           markers = !issue.leaf?
           line(issue.start_date, issue.due_before, issue.done_ratio, markers, label, options, issue)
         end
@@ -431,9 +428,9 @@ module Redmine
         lines(:image => gc, :top => top, :zoom => zoom,
               :subject_width => subject_width, :format => :image)
         # today red line
-        if User.current.today >= @date_from and User.current.today <= date_to
+        if Date.today >= @date_from and Date.today <= date_to
           gc.stroke('red')
-          x = (User.current.today - @date_from + 1) * zoom + subject_width
+          x = (Date.today - @date_from + 1) * zoom + subject_width
           gc.line(x, headers_height, x, headers_height + g_height - 1)
         end
         gc.draw(imgl)
@@ -445,7 +442,7 @@ module Redmine
         pdf = ::Redmine::Export::PDF::ITCPDF.new(current_language)
         pdf.SetTitle("#{l(:label_gantt)} #{project}")
         pdf.alias_nb_pages
-        pdf.footer_date = format_date(User.current.today)
+        pdf.footer_date = format_date(Date.today)
         pdf.AddPage("L")
         pdf.SetFontStyle('B', 12)
         pdf.SetX(15)
@@ -595,8 +592,8 @@ module Redmine
                 coords[:bar_progress_end] = self.date_to - self.date_from + 1
               end
             end
-            if progress_date < User.current.today
-              late_date = [User.current.today, end_date].min
+            if progress_date < Date.today
+              late_date = [Date.today, end_date].min
               if late_date > self.date_from && late_date > start_date
                 if late_date < self.date_to
                   coords[:bar_late_end] = late_date - self.date_from + 1
@@ -666,7 +663,7 @@ module Redmine
             assigned_string = l(:field_assigned_to) + ": " + issue.assigned_to.name
             s << view.avatar(issue.assigned_to,
                              :class => 'gravatar icon-gravatar',
-                             :size => 13,
+                             :size => 10,
                              :title => assigned_string).to_s.html_safe
           end
           s << view.link_to_issue(issue).html_safe

@@ -17,14 +17,12 @@
 </thead>
 <tbody>
 <% @trackers.each do |tracker| -%>
-<tr>
+<tr class="<%= cycle('odd', 'even') %>">
   <td class="name"><%= tracker.name %></td>
   <% @roles.each do |role| -%>
   <% count = @workflow_counts[[tracker.id, role.id]] || 0 %>
     <td>
-      <%= link_to((count > 0 ? count : content_tag(:span, nil, :class => 'icon-only icon-not-ok')),
-                  {:action => 'edit', :role_id => role, :tracker_id => tracker},
-                  :title => l(:button_edit)) %>
+      <%= link_to((count > 0 ? count : image_tag('false.png')), {:action => 'edit', :role_id => role, :tracker_id => tracker}, :title => l(:button_edit)) %>
     </td>
   <% end -%>
 </tr>

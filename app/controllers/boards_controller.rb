@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,7 +17,7 @@
 
 class BoardsController < ApplicationController
   default_search_scope :messages
-  before_action :find_project_by_project_id, :find_board_if_available, :authorize
+  before_filter :find_project_by_project_id, :find_board_if_available, :authorize
   accept_rss_auth :index, :show
 
   helper :sort
@@ -25,7 +25,7 @@ class BoardsController < ApplicationController
   helper :watchers
 
   def index
-    @boards = @project.boards.preload(:last_message => :author).to_a
+    @boards = @project.boards.preload(:project, :last_message => :author).to_a
     # show the board if there is only one
     if @boards.size == 1
       @board = @boards.first
@@ -37,14 +37,15 @@ class BoardsController < ApplicationController
     respond_to do |format|
       format.html {
         sort_init 'updated_on', 'desc'
-        sort_update 'created_on' => "#{Message.table_name}.id",
+        sort_update 'created_on' => "#{Message.table_name}.created_on",
                     'replies' => "#{Message.table_name}.replies_count",
-                    'updated_on' => "COALESCE(#{Message.table_name}.last_reply_id, #{Message.table_name}.id)"
+                    'updated_on' => "COALESCE(last_replies_messages.created_on, #{Message.table_name}.created_on)"
 
         @topic_count = @board.topics.count
         @topic_pages = Paginator.new @topic_count, per_page_option, params['page']
         @topics =  @board.topics.
-          reorder(:sticky => :desc).
+          reorder("#{Message.table_name}.sticky DESC").
+          joins("LEFT OUTER JOIN #{Message.table_name} last_replies_messages ON last_replies_messages.id = #{Message.table_name}.last_reply_id").
           limit(@topic_pages.per_page).
           offset(@topic_pages.offset).
           order(sort_clause).
@@ -55,7 +56,7 @@ class BoardsController < ApplicationController
       }
       format.atom {
         @messages = @board.messages.
-          reorder(:id => :desc).
+          reorder('created_on DESC').
           includes(:author, :board).
           limit(Setting.feeds_limit.to_i).
           to_a
@@ -86,25 +87,14 @@ class BoardsController < ApplicationController
   def update
     @board.safe_attributes = params[:board]
     if @board.save
-      respond_to do |format|
-        format.html {
-          flash[:notice] = l(:notice_successful_update)
-          redirect_to_settings_in_projects
-        }
-        format.js { head 200 }
-      end
+      redirect_to_settings_in_projects
     else
-      respond_to do |format|
-        format.html { render :action => 'edit' }
-        format.js { head 422 }
-      end
+      render :action => 'edit'
     end
   end
 
   def destroy
-    if @board.destroy
-      flash[:notice] = l(:notice_successful_delete)
-    end
+    @board.destroy
     redirect_to_settings_in_projects
   end
 

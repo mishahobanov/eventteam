@@ -23,22 +23,22 @@
 <%= check_box_tag 'query_is_for_all', 1, @query.project.nil?, :class => (User.current.admin? ? '' : 'disable-unless-private') %></p>
 
 <% unless params[:gantt] %>
-<fieldset id="options"><legend><%= l(:label_options) %></legend>
+<fieldset><legend><%= l(:label_options) %></legend>
 <p><label for="query_default_columns"><%=l(:label_default_columns)%></label>
 <%= check_box_tag 'default_columns', 1, @query.has_default_columns?, :id => 'query_default_columns',
-      :data => {:disables => "#columns, .block_columns input"} %></p>
+      :onclick => 'if (this.checked) {$("#columns").hide();} else {$("#columns").show();}' %></p>
 
 <p><label for="query_group_by"><%= l(:field_group_by) %></label>
 <%= select 'query', 'group_by', @query.groupable_columns.collect {|c| [c.caption, c.name.to_s]}, :include_blank => true %></p>
 
-<p class="block_columns"><label><%= l(:button_show) %></label>
+<p><label><%= l(:button_show) %></label>
 <%= available_block_columns_tags(@query) %></p>
 
 <p><label><%= l(:label_total_plural) %></label>
 <%= available_totalable_columns_tags(@query) %></p>
 </fieldset>
 <% else %>
-<fieldset id="options"><legend><%= l(:label_options) %></legend>
+<fieldset><legend><%= l(:label_options) %></legend>
   <p><label><%= l(:button_show) %></label>
   <label class="inline"><%= check_box_tag "query[draw_relations]", "1", @query.draw_relations %> <%= l(:label_related_issues) %></label>
   <label class="inline"><%= check_box_tag "query[draw_progress_line]", "1", @query.draw_progress_line %> <%= l(:label_gantt_progress_line) %></label>
@@ -71,7 +71,7 @@
 <% end %>
 
 <% unless params[:gantt] %>
-<%= content_tag 'fieldset', :id => 'columns' do %>
+<%= content_tag 'fieldset', :id => 'columns', :style => (query.has_default_columns? ? 'display:none;' : nil) do %>
 <legend><%= l(:field_column_names) %></legend>
 <%= render_query_columns_selection(query) %>
 <% end %>

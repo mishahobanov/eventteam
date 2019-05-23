@@ -7,7 +7,6 @@ jsToolBar.strings['Code'] = 'Програмын код';
 jsToolBar.strings['Heading 1'] = 'Гарчиг 1';
 jsToolBar.strings['Heading 2'] = 'Гарчиг 2';
 jsToolBar.strings['Heading 3'] = 'Гарчиг 3';
-jsToolBar.strings['Highlighted code'] = 'Highlighted code';
 jsToolBar.strings['Unordered list'] = 'Эрэмбэгүй жагсаалт';
 jsToolBar.strings['Ordered list'] = 'Эрэмбэтэй жагсаалт';
 jsToolBar.strings['Quote'] = 'Ишлэл';

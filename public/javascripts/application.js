@@ -1,12 +1,5 @@
 /* Redmine - project management software
-   Copyright (C) 2006-2017  Jean-Philippe Lang */
-
-/* Fix for CVE-2015-9251, to be removed with JQuery >= 3.0 */
-$.ajaxPrefilter(function (s) {
-  if (s.crossDomain) {
-    s.contents.script = false;
-  }
-});
+   Copyright (C) 2006-2016  Jean-Philippe Lang */
 
 function checkAll(id, checked) {
   $('#'+id).find('input[type=checkbox]:enabled').prop('checked', checked);
@@ -127,18 +120,6 @@ function initFilters() {
 function addFilter(field, operator, values) {
   var fieldId = field.replace('.', '_');
   var tr = $('#tr_'+fieldId);
-
-  var filterOptions = availableFilters[field];
-  if (!filterOptions) return;
-
-  if (filterOptions['remote'] && filterOptions['values'] == null) {
-    $.getJSON(filtersUrl, {'name': field}).done(function(data) {
-      filterOptions['values'] = data;
-      addFilter(field, operator, values) ;
-    });
-    return;
-  }
-
   if (tr.length > 0) {
     tr.show();
   } else {
@@ -194,11 +175,6 @@ function buildFilterRow(field, operator, values) {
       if ($.isArray(filterValue)) {
         option.val(filterValue[1]).text(filterValue[0]);
         if ($.inArray(filterValue[1], values) > -1) {option.attr('selected', true);}
-        if (filterValue.length == 3) {
-          var optgroup = select.find('optgroup').filter(function(){return $(this).attr('label') == filterValue[2]});
-          if (!optgroup.length) {optgroup = $('<optgroup>').attr('label', filterValue[2]);}
-          option = optgroup.append(option);
-        }
       } else {
         option.val(filterValue).text(filterValue);
         if ($.inArray(filterValue, values) > -1) {option.attr('selected', true);}
@@ -209,12 +185,12 @@ function buildFilterRow(field, operator, values) {
   case "date":
   case "date_past":
     tr.find('td.values').append(
-      '<span style="display:none;"><input type="date" name="v['+field+'][]" id="values_'+fieldId+'_1" size="10" class="value date_value" /></span>' +
-      ' <span style="display:none;"><input type="date" name="v['+field+'][]" id="values_'+fieldId+'_2" size="10" class="value date_value" /></span>' +
+      '<span style="display:none;"><input type="text" name="v['+field+'][]" id="values_'+fieldId+'_1" size="10" class="value date_value" /></span>' +
+      ' <span style="display:none;"><input type="text" name="v['+field+'][]" id="values_'+fieldId+'_2" size="10" class="value date_value" /></span>' +
       ' <span style="display:none;"><input type="text" name="v['+field+'][]" id="values_'+fieldId+'" size="3" class="value" /> '+labelDayPlural+'</span>'
     );
-    $('#values_'+fieldId+'_1').val(values[0]).datepickerFallback(datepickerOptions);
-    $('#values_'+fieldId+'_2').val(values[1]).datepickerFallback(datepickerOptions);
+    $('#values_'+fieldId+'_1').val(values[0]).datepicker(datepickerOptions);
+    $('#values_'+fieldId+'_2').val(values[1]).datepicker(datepickerOptions);
     $('#values_'+fieldId).val(values[0]);
     break;
   case "string":
@@ -231,8 +207,8 @@ function buildFilterRow(field, operator, values) {
     );
     $('#values_'+fieldId).val(values[0]);
     select = tr.find('td.values select');
-    for (i = 0; i < filterValues.length; i++) {
-      var filterValue = filterValues[i];
+    for (i = 0; i < allProjects.length; i++) {
+      var filterValue = allProjects[i];
       var option = $('<option>');
       option.val(filterValue[1]).text(filterValue[0]);
       if (values[0] == filterValue[1]) { option.attr('selected', true); }
@@ -243,8 +219,8 @@ function buildFilterRow(field, operator, values) {
   case "float":
   case "tree":
     tr.find('td.values').append(
-      '<span style="display:none;"><input type="text" name="v['+field+'][]" id="values_'+fieldId+'_1" size="14" class="value" /></span>' +
-      ' <span style="display:none;"><input type="text" name="v['+field+'][]" id="values_'+fieldId+'_2" size="14" class="value" /></span>'
+      '<span style="display:none;"><input type="text" name="v['+field+'][]" id="values_'+fieldId+'_1" size="6" class="value" /></span>' +
+      ' <span style="display:none;"><input type="text" name="v['+field+'][]" id="values_'+fieldId+'_2" size="6" class="value" /></span>'
     );
     $('#values_'+fieldId+'_1').val(values[0]);
     $('#values_'+fieldId+'_2').val(values[1]);
@@ -355,22 +331,16 @@ function showTab(name, url) {
 
 function moveTabRight(el) {
   var lis = $(el).parents('div.tabs').first().find('ul').children();
-  var bw = $(el).parents('div.tabs-buttons').outerWidth(true);
   var tabsWidth = 0;
   var i = 0;
   lis.each(function() {
     if ($(this).is(':visible')) {
-      tabsWidth += $(this).outerWidth(true);
+      tabsWidth += $(this).width() + 6;
     }
   });
-  if (tabsWidth < $(el).parents('div.tabs').first().width() - bw) { return; }
-  $(el).siblings('.tab-left').removeClass('disabled');
+  if (tabsWidth < $(el).parents('div.tabs').first().width() - 60) { return; }
   while (i<lis.length && !lis.eq(i).is(':visible')) { i++; }
-  var w = lis.eq(i).width();
   lis.eq(i).hide();
-  if (tabsWidth - w < $(el).parents('div.tabs').first().width() - bw) {
-    $(el).addClass('disabled');
-  }
 }
 
 function moveTabLeft(el) {
@@ -379,10 +349,6 @@ function moveTabLeft(el) {
   while (i < lis.length && !lis.eq(i).is(':visible')) { i++; }
   if (i > 0) {
     lis.eq(i-1).show();
-    $(el).siblings('.tab-right').removeClass('disabled');
-  }
-  if (i <= 1) {
-    $(el).addClass('disabled');
   }
 }
 
@@ -390,24 +356,19 @@ function displayTabsButtons() {
   var lis;
   var tabsWidth;
   var el;
-  var numHidden;
   $('div.tabs').each(function() {
     el = $(this);
     lis = el.find('ul').children();
     tabsWidth = 0;
-    numHidden = 0;
     lis.each(function(){
       if ($(this).is(':visible')) {
-        tabsWidth += $(this).outerWidth(true);
-      } else {
-        numHidden++;
+        tabsWidth += $(this).width() + 6;
       }
     });
-    var bw = $(el).parents('div.tabs-buttons').outerWidth(true);
-    if ((tabsWidth < el.width() - bw) && (lis.length === 0 || lis.first().is(':visible'))) {
+    if ((tabsWidth < el.width() - 60) && (lis.first().is(':visible'))) {
       el.find('div.tabs-buttons').hide();
     } else {
-      el.find('div.tabs-buttons').show().children('button.tab-left').toggleClass('disabled', numHidden == 0);
+      el.find('div.tabs-buttons').show();
     }
   });
 }
@@ -591,81 +552,6 @@ function observeSearchfield(fieldId, targetId, url) {
   });
 }
 
-$(document).ready(function(){
-  $(".drdn .autocomplete").val('');
-
-  // This variable is used to focus selected project
-  var selected;
-  $(".drdn-trigger").click(function(e){
-    var drdn = $(this).closest(".drdn");
-    if (drdn.hasClass("expanded")) {
-      drdn.removeClass("expanded");
-    } else {
-      $(".drdn").removeClass("expanded");
-      drdn.addClass("expanded");
-      selected = $('.drdn-items a.selected'); // Store selected project
-      selected.focus(); // Calling focus to scroll to selected project
-      if (!isMobile()) {
-        drdn.find(".autocomplete").focus();
-      }
-      e.stopPropagation();
-    }
-  });
-  $(document).click(function(e){
-    if ($(e.target).closest(".drdn").length < 1) {
-      $(".drdn.expanded").removeClass("expanded");
-    }
-  });
-
-  observeSearchfield('projects-quick-search', null, $('#projects-quick-search').data('automcomplete-url'));
-
-  $(".drdn-content").keydown(function(event){
-    var items = $(this).find(".drdn-items");
-
-    // If a project is selected set focused to selected only once
-    if (selected && selected.length > 0) {
-      var focused = selected;
-      selected = undefined;
-    }
-    else {
-      var focused = items.find("a:focus");
-    }
-    switch (event.which) {
-    case 40: //down
-      if (focused.length > 0) {
-        focused.nextAll("a").first().focus();;
-      } else {
-        items.find("a").first().focus();;
-      }
-      event.preventDefault();
-      break;
-    case 38: //up
-      if (focused.length > 0) {
-        var prev = focused.prevAll("a");
-        if (prev.length > 0) {
-          prev.first().focus();
-        } else {
-          $(this).find(".autocomplete").focus();
-        }
-        event.preventDefault();
-      }
-      break;
-    case 35: //end
-      if (focused.length > 0) {
-        focused.nextAll("a").last().focus();
-        event.preventDefault();
-      }
-      break;
-    case 36: //home
-      if (focused.length > 0) {
-        focused.prevAll("a").last().focus();
-        event.preventDefault();
-      }
-      break;
-    }
-  });
-});
-
 function beforeShowDatePicker(input, inst) {
   var default_date = null;
   switch ($(input).attr("id")) {
@@ -686,48 +572,23 @@ function beforeShowDatePicker(input, inst) {
       }
       break;
   }
-  $(input).datepickerFallback("option", "defaultDate", default_date);
+  $(input).datepicker("option", "defaultDate", default_date);
 }
 
-(function($){
-  $.fn.positionedItems = function(sortableOptions, options){
-    var settings = $.extend({
-      firstPosition: 1
-    }, options );
-
-    return this.sortable($.extend({
-      axis: 'y',
-      handle: ".sort-handle",
-      helper: function(event, ui){
-        ui.children('td').each(function(){
-          $(this).width($(this).width());
-        });
-        return ui;
-      },
-      update: function(event, ui) {
-        var sortable = $(this);
-        var handle = ui.item.find(".sort-handle").addClass("ajax-loading");
-        var url = handle.data("reorder-url");
-        var param = handle.data("reorder-param");
-        var data = {};
-        data[param] = {position: ui.item.index() + settings['firstPosition']};
-        $.ajax({
-          url: url,
-          type: 'put',
-          dataType: 'script',
-          data: data,
-          error: function(jqXHR, textStatus, errorThrown){
-            alert(jqXHR.status);
-            sortable.sortable("cancel");
-          },
-          complete: function(jqXHR, textStatus, errorThrown){
-            handle.removeClass("ajax-loading");
-          }
-        });
-      },
-    }, sortableOptions));
-  }
-}( jQuery ));
+function initMyPageSortable(list, url) {
+  $('#list-'+list).sortable({
+    connectWith: '.block-receiver',
+    tolerance: 'pointer',
+    update: function(){
+      $.ajax({
+        url: url,
+        type: 'post',
+        data: {'blocks': $.map($('#list-'+list).children(), function(el){return $(el).attr('id');})}
+      });
+    }
+  });
+  $("#list-top, #list-left, #list-right").disableSelection();
+}
 
 var warnLeavingUnsavedMessage;
 function warnLeavingUnsaved(message) {
@@ -758,13 +619,6 @@ function setupAjaxIndicator() {
   $(document).bind('ajaxStop', function() {
     $('#ajax-indicator').hide();
   });
-}
-
-function setupTabs() {
-  if($('.tabs').length > 0) {
-    displayTabsButtons();
-    $(window).resize(displayTabsButtons);
-  }
 }
 
 function hideOnLoad() {
@@ -800,49 +654,12 @@ function toggleDisabledOnChange() {
   var checked = $(this).is(':checked');
   $($(this).data('disables')).attr('disabled', checked);
   $($(this).data('enables')).attr('disabled', !checked);
-  $($(this).data('shows')).toggle(checked);
 }
 function toggleDisabledInit() {
-  $('input[data-disables], input[data-enables], input[data-shows]').each(toggleDisabledOnChange);
+  $('input[data-disables], input[data-enables]').each(toggleDisabledOnChange);
 }
-
-function toggleNewObjectDropdown() {
-  var dropdown = $('#new-object + ul.menu-children');
-  if(dropdown.hasClass('visible')){
-    dropdown.removeClass('visible');
-  }else{
-    dropdown.addClass('visible');
-  }
-}
-
-(function ( $ ) {
-
-  // detect if native date input is supported
-  var nativeDateInputSupported = true;
-
-  var input = document.createElement('input');
-  input.setAttribute('type','date');
-  if (input.type === 'text') {
-    nativeDateInputSupported = false;
-  }
-
-  var notADateValue = 'not-a-date';
-  input.setAttribute('value', notADateValue);
-  if (input.value === notADateValue) {
-    nativeDateInputSupported = false;
-  }
-
-  $.fn.datepickerFallback = function( options ) {
-    if (nativeDateInputSupported) {
-      return this;
-    } else {
-      return this.datepicker( options );
-    }
-  };
-}( jQuery ));
-
 $(document).ready(function(){
-  $('#content').on('change', 'input[data-disables], input[data-enables], input[data-shows]', toggleDisabledOnChange);
+  $('#content').on('change', 'input[data-disables], input[data-enables]', toggleDisabledOnChange);
   toggleDisabledInit();
 });
 
@@ -861,4 +678,3 @@ $(document).ready(setupAjaxIndicator);
 $(document).ready(hideOnLoad);
 $(document).ready(addFormObserversForDoubleSubmit);
 $(document).ready(defaultFocus);
-$(document).ready(setupTabs);

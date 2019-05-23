@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2017  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -54,7 +54,7 @@ module Redmine
           end
 
           def scm_version_from_command_line
-            shellout("#{sq_bin} --version") { |io| io.read }.to_s
+            shellout("#{sq_bin} --version --no-color") { |io| io.read }.to_s
           end
         end
 
@@ -338,7 +338,7 @@ module Redmine
           content = nil
           git_cmd(cmd_args) { |io| io.binmode; content = io.read }
           # git annotates binary files
-          return nil if ScmData.binary?(content)
+          return nil if content.is_binary_data?
           identifier = ''
           # git shows commit author on the first occurrence only
           authors_by_commit = {}
