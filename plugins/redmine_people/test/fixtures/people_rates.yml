@@ -1,0 +1,93 @@
+---
+# === The rates since 1 February 2017 for person with id 4 ===
+people_rate_1: # Default cost rate
+  id: 1
+  rate_type: <%= PeopleRate::COST_RATE %>
+  rate: 5
+  from_date: 2017-02-01 00:00:00
+  user_id: 4
+
+people_rate_2: # Cost rate for the project with id 1
+  id: 2
+  rate_type: <%= PeopleRate::COST_RATE %>
+  rate: 10
+  from_date: 2017-02-01 00:00:00
+  project_id: 1
+  user_id: 4
+
+people_rate_3: # Default bill rate
+  id: 3
+  rate_type: <%= PeopleRate::BILL_RATE %>
+  rate: 20
+  from_date: 2017-02-01 00:00:00
+  user_id: 4
+
+people_rate_4: # Bill rate for the project with id 1
+  id: 4
+  rate_type: <%= PeopleRate::BILL_RATE %>
+  rate: 25
+  from_date: 2017-02-01 00:00:00
+  project_id: 1
+  user_id: 4
+
+# === The rates since 1 March 2017 for person with id 4 ===
+people_rate_5: # Default cost rate
+  id: 5
+  rate_type: <%= PeopleRate::COST_RATE %>
+  rate: 10
+  from_date: 2017-03-01 00:00:00
+  user_id: 4
+
+people_rate_6: # Cost rate for the project with id 1
+  id: 6
+  rate_type: <%= PeopleRate::COST_RATE %>
+  rate: 15
+  from_date: 2017-03-01 00:00:00
+  project_id: 1
+  user_id: 4
+
+people_rate_7: # Default bill rate
+  id: 7
+  rate_type: <%= PeopleRate::BILL_RATE %>
+  rate: 20
+  from_date: 2017-03-01 00:00:00
+  user_id: 4
+
+people_rate_8: # Bill rate for the project with id 1
+  id: 8
+  rate_type: <%= PeopleRate::BILL_RATE %>
+  rate: 25
+  from_date: 2017-03-01 00:00:00
+  project_id: 1
+  user_id: 4
+
+# === The rates since 5 April 2017 for person with id 4 ===
+people_rate_9: # Default cost rate
+  id: 9
+  rate_type: <%= PeopleRate::COST_RATE %>
+  rate: 15
+  from_date: 2017-04-05 00:00:00
+  user_id: 4
+
+people_rate_10: # Cost rate for the project with id 1
+  id: 10
+  rate_type: <%= PeopleRate::COST_RATE %>
+  rate: 20
+  from_date: 2017-04-05 00:00:00
+  project_id: 1
+  user_id: 4
+
+people_rate_11: # Default bill rate
+  id: 11
+  rate_type: <%= PeopleRate::BILL_RATE %>
+  rate: 25
+  from_date: 2017-04-05 00:00:00
+  user_id: 4
+
+people_rate_12: # Bill rate for the project with id 1
+  id: 12
+  rate_type: <%= PeopleRate::BILL_RATE %>
+  rate: 30
+  from_date: 2017-04-05 00:00:00
+  project_id: 1
+  user_id: 4

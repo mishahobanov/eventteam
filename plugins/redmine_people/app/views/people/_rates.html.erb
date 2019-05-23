@@ -1,0 +1,42 @@
+<table class="chart_table">
+  <tbody>
+    <tr class="metrics">
+      <% if @rates_collector.default_cost_rate.present? %>
+        <td>
+          <p><%= l(:label_people_current_cost_rate) %></p>
+          <div class="num"><%= rate_to_currency(@rates_collector.default_cost_rate) %><span>/hr</span></div>
+        </td>
+      <% end %>
+
+      <% if @rates_collector.default_bill_rate.present? %>
+        <td>
+          <p><%= l(:label_people_current_bill_rate) %></p>
+          <div class="num"><%= rate_to_currency(@rates_collector.default_bill_rate) %><span>/hr</span></div>
+        </td>
+      <% end %>
+
+      <% if @rates_collector.default_cost_rate.present? || @rates_collector.default_bill_rate.present? %>
+        <td class="delimiter"></td>
+      <% end %>
+
+      <% if @rates_collector.weekly_cost.present? %>
+        <td>
+          <p><%= l(:label_people_weekly_cost) %></p>
+          <div class="num"><%= rate_to_currency(@rates_collector.weekly_cost) %></div>
+          <%= metric_deviation_html(@rates_collector.previous_weekly_cost, @rates_collector.weekly_cost) %>
+        </td>
+      <% end %>
+
+      <% if @rates_collector.weekly_cost.present? %>
+        <td>
+          <p><%= l(:label_people_monthly_cost) %></p>
+          <div class="num"><%= rate_to_currency(@rates_collector.monthly_cost) %></div>
+          <%= metric_deviation_html(@rates_collector.previous_monthly_cost, @rates_collector.monthly_cost) %>
+        </td>
+      <% end %>
+
+    </tr>
+  </tbody>
+</table>
+
+<%= render partial: 'people_rates/index' %>

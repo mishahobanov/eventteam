@@ -1,0 +1,36 @@
+<% prefix = PeopleRate.prefix(type) %>
+<% rates = @person.rates.send("#{prefix}_rates") %>
+<% current_rates = PeopleRate.current_rates(rates) %>
+<% default_rate = rates_collector.send("default_#{prefix}_rate") %>
+
+<tr class="group open">
+  <td colspan="10">
+    <span class="expander" onclick="toggleRowGroup(this);">&nbsp;</span>
+    <span class="name"><%= l("label_people_#{prefix}_rates") %></span> <span class="count"><%= rates.size %></span>
+    <% if default_rate.present? %>
+      <span class="totals">
+        <span class="total-for-estimated-hours">
+          <span><%= l("label_people_default_#{prefix}_rate") %>: </span>
+          <span class="value"><%= rate_to_currency(default_rate) %></span>
+        </span>
+      </span>
+    <% end %>
+    <a href="#" onclick="toggleAllRowGroups(this); return false;" class="toggle-all"><%= "#{l(:button_collapse_all)}/#{l(:button_expand_all)}" %></a>
+  </td>
+</tr>
+
+<% rates.each do |people_rate| %>
+  <tr class="<%= cycle('odd', 'even') %>" style="<%= current_rates.include?(people_rate) ? '' : 'color: #aaa;' %>">
+    <td><%= format_date people_rate.from_date %></td>
+    <% if people_rate.project.present? %>
+      <td><%= people_rate.project %></td>
+    <% else %>
+      <td style="font-style: italic ;"><%= l(:label_default) %></td>
+    <% end %>
+    <td><%= rate_to_currency(people_rate.rate) %></td>
+    <td>
+      <%= link_to l(:button_edit), edit_person_people_rate_path(@person, people_rate), class: 'icon icon-edit' %>
+      <%= link_to l(:button_delete), person_people_rate_path(@person, people_rate), class: 'icon icon-del', data: { confirm: l(:text_are_you_sure) }, method: :delete %>
+    </td>
+  </tr>
+<% end %>
