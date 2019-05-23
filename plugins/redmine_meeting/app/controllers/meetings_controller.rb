@@ -67,7 +67,12 @@ class MeetingsController < ApplicationController
                                status: 'New',
                                user_id: User.current.id)
                                
-                              
+                               if  Redmine::VERSION::MAJOR > 3
+                                   @meeting.safe_attributes= params[:meeting].merge(params[:schedule]).permit!
+                                   
+                                   else
+                                   @meeting.safe_attributes= params[:meeting].merge(params[:schedule])
+                               end
                                if @meeting.save
                                    users = User.where(id: params[:users])
                                    @meeting.users<< users
@@ -104,6 +109,11 @@ class MeetingsController < ApplicationController
     end
     
     def update
+        if  Redmine::VERSION::MAJOR > 3
+            @meeting.safe_attributes= params[:meeting].merge(params[:schedule]).permit!
+            else
+            @meeting.safe_attributes= params[:meeting].merge(params[:schedule])
+        end
         
         if @meeting.save
             new_users = params[:users].map(&:to_i) - @meeting.users.map(&:id)
@@ -171,17 +181,36 @@ class MeetingsController < ApplicationController
             @q2 = MeetingQuery.build_from_params(params, :name => '_')
             scope = Meeting.visible.where(project_id: @project.id)
             unless params[:show_all]
-                scope = scope.where(status:'New')
+                scope = scope.where("status= ? OR archive = ?", 'New', false)
             end
             @events = scope.where("(date BETWEEN ? AND ?) OR (end_date BETWEEN ? AND ?)", @calendar.startdt, @calendar.enddt,@calendar.startdt, @calendar.enddt)
             
             @calendar.events = @events
         end
     end
-  
+    
     def get_meeting
         @meeting = Meeting.find(params[:id])
         rescue ActiveRecord::RecordNotFound
         render_404
     end
+end
+def meeting_perms
+    params.require(:meeting).permit(:subject,
+                                    :location,
+                                    :location_online,
+                                    :project_id,
+                                    :user_id,
+                                    :recurring_type,
+                                    :days_recurring,
+                                    :weekly_recurring,
+                                    :monthly_recurring,
+                                    :end_time,
+                                    :start_time,
+                                    :status,
+                                    :date,
+                                    :end_date,
+                                    :agenda,
+                                    :custom_field_values,
+                                    :meeting_minutes)
 end
