@@ -67,12 +67,8 @@ class MeetingsController < ApplicationController
                                status: 'New',
                                user_id: User.current.id)
                                
-                               if  Redmine::VERSION::MAJOR > 3
-                                  @meeting.safe_attributes= params.require(:meeting).merge(params.require(:schedule)).permit
-                                   
-                                   else
-                                   @meeting.safe_attributes= params.require(:meeting).merge(params.require(:schedule))
-                               end
+                               params.require(:meeting).permit(@meeting.safe_attributes)
+                               
                                if @meeting.save
                                    users = User.where(id: params[:users])
                                    @meeting.users<< users
@@ -109,12 +105,7 @@ class MeetingsController < ApplicationController
     end
     
     def update
-        if  Redmine::VERSION::MAJOR > 3
-            @meeting.safe_attributes= params.require(:meeting).merge(params.require(:schedule)).permit
-            
-            else
-            @meeting.safe_attributes= params.require(:meeting).merge(params.require(:schedule))
-        end
+         params.require(:meeting).permit(@meeting.safe_attributes)
         
         if @meeting.save
             new_users = params[:users].map(&:to_i) - @meeting.users.map(&:id)
