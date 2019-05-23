@@ -67,24 +67,7 @@ class MeetingsController < ApplicationController
                                status: 'New',
                                user_id: User.current.id)
                                
-                               params.require(:meeting).permit(:subject,
-                                                               :location,
-                                                               :location_online,
-                                                               :project_id,
-                                                               :user_id,
-                                                               :recurring_type,
-                                                               :days_recurring,
-                                                               :weekly_recurring,
-                                                               :monthly_recurring,
-                                                               :end_time,
-                                                               :start_time,
-                                                               :status,
-                                                               :date,
-                                                               :end_date,
-                                                               :agenda,
-                                                               :custom_field_values,
-                                                               :meeting_minutes)
-                               
+                              
                                if @meeting.save
                                    users = User.where(id: params[:users])
                                    @meeting.users<< users
@@ -121,23 +104,6 @@ class MeetingsController < ApplicationController
     end
     
     def update
-        params.require(:meeting).permit(:subject,
-                                        :location,
-                                        :location_online,
-                                        :project_id,
-                                        :user_id,
-                                        :recurring_type,
-                                        :days_recurring,
-                                        :weekly_recurring,
-                                        :monthly_recurring,
-                                        :end_time,
-                                        :start_time,
-                                        :status,
-                                        :date,
-                                        :end_date,
-                                        :agenda,
-                                        :custom_field_values,
-                                        :meeting_minutes)
         
         if @meeting.save
             new_users = params[:users].map(&:to_i) - @meeting.users.map(&:id)
@@ -161,6 +127,23 @@ class MeetingsController < ApplicationController
     def calendar
         
     end
+    params.require(:meeting).permit(:subject,
+    :location,
+    :location_online,
+    :project_id,
+    :user_id,
+    :recurring_type,
+    :days_recurring,
+    :weekly_recurring,
+    :monthly_recurring,
+    :end_time,
+    :start_time,
+    :status,
+    :date,
+    :end_date,
+    :agenda,
+    :custom_field_values,
+    :meeting_minutes)
     
     def schedule
         @day = params[:day].to_i
