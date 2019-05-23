@@ -181,29 +181,17 @@ class MeetingsController < ApplicationController
       @q2 = MeetingQuery.build_from_params(params, :name => '_')
       scope = Meeting.visible.where(project_id: @project.id)
       unless params[:show_all]
-        scope = scope.where("status= ? OR archive = ?", 'New', false)
+        scope = scope.where(status:'New')
       end
       @events = scope.where("(date BETWEEN ? AND ?) OR (end_date BETWEEN ? AND ?)", @calendar.startdt, @calendar.enddt,@calendar.startdt, @calendar.enddt)
 
       @calendar.events = @events
     end
   end
-  
-  def meeting_setting_params
-      params.require(:meeting).permit(:subject,:location,:location_online,:project_id,:user_id,:recurring_type,
-                                      :days_recurring,:weekly_recurring,:monthly_recurring,:end_time,:start_time,:status,:date,
-                                      :end_date,:agenda,:custom_field_values,:meeting_minutes,:archive)
-  end
-  
-  unlocked_params = ActiveSupport::HashWithIndifferentAccess.new(params)
-  
-  model.create!(unlocked_params)
-  
+
   def get_meeting
     @meeting = Meeting.find(params[:id])
   rescue ActiveRecord::RecordNotFound
     render_404
   end
 end
-
-

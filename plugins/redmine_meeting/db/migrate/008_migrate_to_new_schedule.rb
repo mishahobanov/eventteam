@@ -1,4 +1,4 @@
-class MigrateToNewSchedule < ActiveRecord::Migration
+class MigrateToNewSchedule< ActiveRecord::Migration
   def up
     Meeting.all.each do |meeting|
       meeting.recurring_type = "1" if meeting.recurring_time == "1"

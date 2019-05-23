@@ -42,8 +42,7 @@ class Meeting < ActiveRecord::Base
                   'end_date',
                   'agenda',
                   'custom_field_values',
-                  'meeting_minutes',
-                  'archive'
+                  'meeting_minutes'
 
   scope :visible, lambda {|*args|
     if User.current.admin?
@@ -52,9 +51,6 @@ class Meeting < ActiveRecord::Base
       includes(:project, :meeting_users).references(:project, :meeting_users).where("meeting_users.user_id= ? OR #{table_name}.user_id = ?", User.current.id, User.current.id)
     end
   }
-  def self.not_archived
-    where(archive: false)
-  end
 
   def due_date
     date
@@ -140,6 +136,7 @@ class Meeting < ActiveRecord::Base
   def self.turn_to_completed
     Meeting.where("end_date IS NOT NULL AND end_date < ? AND status= 'New'", Date.today).update_all(status: 'Completed')
   end
+
 
 
 end
