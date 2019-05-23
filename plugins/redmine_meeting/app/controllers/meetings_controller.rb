@@ -189,7 +189,7 @@ class MeetingsController < ApplicationController
     end
   end
   def meeting_setting_params
-      params.require(:meeting).permit('subject', 'date', 'end_date', 'start_time', 'location_online', 'status')
+      params[:schedule].require(:meeting).permit('subject', 'date', 'end_date', 'start_time', 'location_online', 'status')
   end
   def get_meeting
     @meeting = Meeting.find(params[:id])
