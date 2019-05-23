@@ -140,10 +140,6 @@ class Meeting < ActiveRecord::Base
   def self.turn_to_completed
     Meeting.where("end_date IS NOT NULL AND end_date < ? AND status= 'New'", Date.today).update_all(status: 'Completed')
   end
-def meeting_setting_params
-    params.require(:meeting).permit(:subject,:location,:location_online,:project_id,:user_id,:recurring_type,
-                                    :days_recurring,:weekly_recurring,:monthly_recurring,:end_time,:start_time,:status,:date,
-                                    :end_date,:agenda,:custom_field_values,:meeting_minutes,:archive)
-end
+
 
 end
