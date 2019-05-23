@@ -19,7 +19,6 @@ class TimelogController < ApplicationController
   menu_item :issues
 
   before_filter :find_time_entry, :only => [:show, :edit, :update]
-  before_filter :check_editability, :only => [:edit, :update]
   before_filter :find_time_entries, :only => [:bulk_edit, :bulk_update, :destroy]
   before_filter :authorize, :only => [:show, :edit, :update, :bulk_edit, :bulk_update, :destroy]
 
@@ -208,7 +207,7 @@ class TimelogController < ApplicationController
         else
           flash[:error] = l(:notice_unable_delete_time_entry)
         end
-        redirect_back_or_default project_time_entries_path(@projects.first), :referer => true
+        redirect_back_or_default project_time_entries_path(@projects.first)
       }
       format.api  {
         if destroyed
@@ -223,16 +222,13 @@ class TimelogController < ApplicationController
 private
   def find_time_entry
     @time_entry = TimeEntry.find(params[:id])
-    @project = @time_entry.project
-  rescue ActiveRecord::RecordNotFound
-    render_404
-  end
-
-  def check_editability
     unless @time_entry.editable_by?(User.current)
       render_403
       return false
     end
+    @project = @time_entry.project
+  rescue ActiveRecord::RecordNotFound
+    render_404
   end
 
   def find_time_entries
@@ -279,16 +275,7 @@ private
   def parse_params_for_bulk_time_entry_attributes(params)
     attributes = (params[:time_entry] || {}).reject {|k,v| v.blank?}
     attributes.keys.each {|k| attributes[k] = '' if attributes[k] == 'none'}
-    if custom = attributes[:custom_field_values]
-      custom.reject! {|k,v| v.blank?}
-      custom.keys.each do |k|
-        if custom[k].is_a?(Array)
-          custom[k] << '' if custom[k].delete('__none__')
-        else
-          custom[k] = '' if custom[k] == '__none__'
-        end
-      end
-    end
+    attributes[:custom_field_values].reject! {|k,v| v.blank?} if attributes[:custom_field_values]
     attributes
   end
 end

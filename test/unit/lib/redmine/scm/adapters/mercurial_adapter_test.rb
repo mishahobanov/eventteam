@@ -447,11 +447,7 @@ class MercurialAdapterTest < ActiveSupport::TestCase
 
     def test_hgversion_for(hgversion, version)
       @adapter.class.expects(:hgversion_from_command_line).returns(hgversion)
-      if version
-        assert_equal version, @adapter.class.hgversion
-      else
-        assert_nil @adapter.class.hgversion
-      end
+      assert_equal version, @adapter.class.hgversion
     end
 
     def test_template_path_for(version, template)

@@ -266,13 +266,12 @@ class MailHandlerTest < ActiveSupport::TestCase
   end
 
   def test_add_issue_with_cc
-    user = User.find_by_mail('dlopper@somenet.foo')
     issue = submit_email('ticket_with_cc.eml', :issue => {:project => 'ecookbook'})
     assert issue.is_a?(Issue)
     assert !issue.new_record?
-    assert issue.watched_by?(user)
+    issue.reload
+    assert issue.watched_by?(User.find_by_mail('dlopper@somenet.foo'))
     assert_equal 1, issue.watcher_user_ids.size
-    assert_include user, issue.watcher_users.to_a
   end
 
   def test_add_issue_from_additional_email_address

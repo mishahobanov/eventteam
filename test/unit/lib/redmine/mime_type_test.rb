@@ -20,7 +20,8 @@ require File.expand_path('../../../../test_helper', __FILE__)
 class Redmine::MimeTypeTest < ActiveSupport::TestCase
 
   def test_of
-    to_test = {'test.txt' => 'text/plain',
+    to_test = {'test.unk' => nil,
+               'test.txt' => 'text/plain',
                'test.c' => 'text/x-c',
                }
     to_test.each do |name, expected|
@@ -28,12 +29,9 @@ class Redmine::MimeTypeTest < ActiveSupport::TestCase
     end
   end
 
-  def test_of_with_unknown_type
-    assert_nil Redmine::MimeType.of('test.unk')
-  end
-
   def test_css_class_of
-    to_test = {'test.txt' => 'text-plain',
+    to_test = {'test.unk' => nil,
+               'test.txt' => 'text-plain',
                'test.c' => 'text-x-c',
                }
     to_test.each do |name, expected|
@@ -41,21 +39,14 @@ class Redmine::MimeTypeTest < ActiveSupport::TestCase
     end
   end
 
-  def test_css_class_of_with_unknown_type
-    assert_nil Redmine::MimeType.css_class_of('test.unk')
-  end
-
   def test_main_mimetype_of
-    to_test = {'test.txt' => 'text',
+    to_test = {'test.unk' => nil,
+               'test.txt' => 'text',
                'test.c' => 'text',
                }
     to_test.each do |name, expected|
       assert_equal expected, Redmine::MimeType.main_mimetype_of(name)
     end
-  end
-
-  def test_main_mimetype_of_with_unknown_type
-    assert_nil Redmine::MimeType.main_mimetype_of('test.unk')
   end
 
   def test_is_type

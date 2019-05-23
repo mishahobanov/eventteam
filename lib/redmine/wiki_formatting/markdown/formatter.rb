@@ -22,11 +22,8 @@ module Redmine
     module Markdown
       class HTML < Redcarpet::Render::HTML
         include ActionView::Helpers::TagHelper
-        include Redmine::Helpers::URL
 
         def link(link, title, content)
-          return nil unless uri_with_safe_scheme?(link)
-
           css = nil
           unless link && link.starts_with?('/')
             css = 'external'
@@ -35,19 +32,13 @@ module Redmine
         end
 
         def block_code(code, language)
-          if language.present? && Redmine::SyntaxHighlighting.language_supported?(language)
+          if language.present?
             "<pre><code class=\"#{CGI.escapeHTML language} syntaxhl\">" +
               Redmine::SyntaxHighlighting.highlight_by_language(code, language) +
               "</code></pre>"
           else
             "<pre>" + CGI.escapeHTML(code) + "</pre>"
           end
-        end
-
-        def image(link, title, alt_text)
-          return unless uri_with_safe_scheme?(link)
-
-          tag('img', :src => link, :alt => alt_text || "", :title => title)
         end
       end
 

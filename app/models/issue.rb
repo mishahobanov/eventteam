@@ -103,8 +103,8 @@ class Issue < ActiveRecord::Base
     ids.any? ? where(:assigned_to_id => ids) : none
   }
 
-  before_validation :default_assign, on: :create
   before_validation :clear_disabled_fields
+  before_create :default_assign
   before_save :close_duplicates, :update_done_ratio_from_issue_status,
               :force_updated_on_change, :update_closed_on, :set_assigned_to_was
   after_save {|issue| issue.send :after_project_change if !issue.id_changed? && issue.project_id_changed?}
@@ -233,7 +233,7 @@ class Issue < ActiveRecord::Base
   # Copies attributes from another issue, arg can be an id or an Issue
   def copy_from(arg, options={})
     issue = arg.is_a?(Issue) ? arg : Issue.visible.find(arg)
-    self.attributes = issue.attributes.dup.except("id", "root_id", "parent_id", "lft", "rgt", "created_on", "updated_on", "closed_on")
+    self.attributes = issue.attributes.dup.except("id", "root_id", "parent_id", "lft", "rgt", "created_on", "updated_on")
     self.custom_field_values = issue.custom_field_values.inject({}) {|h,v| h[v.custom_field_id] = v.value; h}
     self.status = issue.status
     self.author = User.current
@@ -302,17 +302,16 @@ class Issue < ActiveRecord::Base
   # * or if the status was not part of the new tracker statuses
   # * or the status was nil
   def tracker=(tracker)
-    tracker_was = self.tracker
-    association(:tracker).writer(tracker)
-    if tracker != tracker_was
-      if status == tracker_was.try(:default_status)
+    if tracker != self.tracker
+      if status == default_status
         self.status = nil
       elsif status && tracker && !tracker.issue_status_ids.include?(status.id)
         self.status = nil
       end
-      reassign_custom_field_values
+      @custom_field_values = nil
       @workflow_rule_by_attribute = nil
     end
+    association(:tracker).writer(tracker)
     self.status ||= default_status
     self.tracker
   end
@@ -356,7 +355,7 @@ class Issue < ActiveRecord::Base
       unless valid_parent_project?
         self.parent_issue_id = nil
       end
-      reassign_custom_field_values
+      @custom_field_values = nil
       @workflow_rule_by_attribute = nil
     end
     # Set fixed_version to the project default version if it's valid
@@ -964,7 +963,7 @@ class Issue < ActiveRecord::Base
 
   # Returns the number of hours spent on this issue
   def spent_hours
-    @spent_hours ||= time_entries.sum(:hours) || 0.0
+    @spent_hours ||= time_entries.sum(:hours) || 0
   end
 
   # Returns the total number of hours spent on this issue and its descendants
@@ -1003,7 +1002,7 @@ class Issue < ActiveRecord::Base
     if issues.any?
       hours_by_issue_id = TimeEntry.visible(user).where(:issue_id => issues.map(&:id)).group(:issue_id).sum(:hours)
       issues.each do |issue|
-        issue.instance_variable_set "@spent_hours", (hours_by_issue_id[issue.id] || 0.0)
+        issue.instance_variable_set "@spent_hours", (hours_by_issue_id[issue.id] || 0)
       end
     end
   end
@@ -1016,7 +1015,7 @@ class Issue < ActiveRecord::Base
           " AND parent.lft <= #{Issue.table_name}.lft AND parent.rgt >= #{Issue.table_name}.rgt").
         where("parent.id IN (?)", issues.map(&:id)).group("parent.id").sum(:hours)
       issues.each do |issue|
-        issue.instance_variable_set "@total_spent_hours", (hours_by_issue_id[issue.id] || 0.0)
+        issue.instance_variable_set "@total_spent_hours", (hours_by_issue_id[issue.id] || 0)
       end
     end
   end
@@ -1040,15 +1039,6 @@ class Issue < ActiveRecord::Base
         issue.instance_variable_set "@relations", IssueRelation::Relations.new(issue, relations.sort)
       end
     end
-  end
-
-  # Returns a scope of the given issues and their descendants
-  def self.self_and_descendants(issues)
-    Issue.joins("JOIN #{Issue.table_name} ancestors" +
-        " ON ancestors.root_id = #{Issue.table_name}.root_id" +
-        " AND ancestors.lft <= #{Issue.table_name}.lft AND ancestors.rgt >= #{Issue.table_name}.rgt"
-      ).
-      where(:ancestors => {:id => issues.map(&:id)})
   end
 
   # Finds an issue relation given its id.

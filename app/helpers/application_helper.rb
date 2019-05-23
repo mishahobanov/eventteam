@@ -28,7 +28,6 @@ module ApplicationHelper
   include Redmine::SudoMode::Helper
   include Redmine::Themes::Helper
   include Redmine::Hook::Helper
-  include Redmine::Helpers::URL
 
   extend Forwardable
   def_delegators :wiki_helper, :wikitoolbar_for, :heads_for_wiki_formatter
@@ -176,8 +175,7 @@ module ApplicationHelper
     end
     case object.class.name
     when 'Array'
-      formatted_objects = object.map {|o| format_object(o, html)}
-      html ? safe_join(formatted_objects, ', ') : formatted_objects.join(', ')
+      object.map {|o| format_object(o, html)}.join(', ').html_safe
     when 'Time'
       format_time(object)
     when 'Date'
@@ -675,7 +673,7 @@ module ApplicationHelper
           title ||= identifier if page.blank?
         end
 
-        if link_project && link_project.wiki && User.current.allowed_to?(:view_wiki_pages, link_project)
+        if link_project && link_project.wiki
           # extract anchor
           anchor = nil
           if page =~ /^(.+?)\#(.+)$/

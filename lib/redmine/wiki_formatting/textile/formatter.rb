@@ -121,14 +121,8 @@ module Redmine
             text.gsub!(/<redpre#(\d+)>/) do
               content = @pre_list[$1.to_i]
               if content.match(/<code\s+class="(\w+)">\s?(.+)/m)
-                language = $1
-                text = $2
-                if Redmine::SyntaxHighlighting.language_supported?(language)
-                  content = "<code class=\"#{language} syntaxhl\">" +
-                    Redmine::SyntaxHighlighting.highlight_by_language(text, language)
-                else
-                  content = "<code>#{ERB::Util.h(text)}"
-                end
+                content = "<code class=\"#{$1} syntaxhl\">" +
+                  Redmine::SyntaxHighlighting.highlight_by_language($2, $1)
               end
               content
             end

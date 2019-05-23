@@ -165,7 +165,6 @@
 #  class RedCloth::Textile.new( str )
 
 class RedCloth3 < String
-    include Redmine::Helpers::URL
 
     VERSION = '3.0.4'
     DEFAULT_RULES = [:textile, :markdown]
@@ -494,15 +493,7 @@ class RedCloth3 < String
         style << "text-align:#{ h_align( $& ) };" if text =~ A_HLGN
 
         cls, id = $1, $2 if cls =~ /^(.*?)#(.*)$/
-
-        # add wiki-class- and wiki-id- to classes and ids to prevent setting of
-        # arbitrary classes and ids
-        cls = cls.split(/\s+/).map do |c|
-          c.starts_with?('wiki-class-') ? c : "wiki-class-#{c}"
-        end.join(' ') if cls
-
-        id = id.starts_with?('wiki-id-') ? id : "wiki-id-#{id}" if id
-
+        
         atts = ''
         atts << " style=\"#{ style.join }\"" unless style.empty?
         atts << " class=\"#{ cls }\"" unless cls.to_s.empty?
@@ -969,8 +960,6 @@ class RedCloth3 < String
             href, alt_title = check_refs( href ) if href
             url, url_title = check_refs( url )
 
-            return m unless uri_with_safe_scheme?(url)
-
             out = ''
             out << "<a#{ shelve( " href=\"#{ href }\"" ) }>" if href
             out << "<img#{ shelve( atts ) } />"
@@ -981,7 +970,7 @@ class RedCloth3 < String
                 if stln == "<p>"
                     out = "<p style=\"float:#{ algn }\">#{ out }"
                 else
-                    out = "#{ stln }<span style=\"float:#{ algn }\">#{ out }</span>"
+                    out = "#{ stln }<div style=\"float:#{ algn }\">#{ out }</div>"
                 end
             else
                 out = stln + out
@@ -1105,7 +1094,7 @@ class RedCloth3 < String
                         first.match(/<#{ OFFTAGS }([^>]*)>/)
                         tag = $1
                         $2.to_s.match(/(class\=("[^"]+"|'[^']+'))/i)
-                        tag << " #{$1}" if $1 && tag == 'code'
+                        tag << " #{$1}" if $1
                         @pre_list << "<#{ tag }>#{ aftertag }"
                     end
                 elsif $1 and codepre > 0
@@ -1210,8 +1199,8 @@ class RedCloth3 < String
         end
     end
     
+    ALLOWED_TAGS = %w(redpre pre code notextile)
     
-    ALLOWED_TAGS = %w(redpre pre code kbd notextile)
     def escape_html_tags(text)
       text.gsub!(%r{<(\/?([!\w]+)[^<>\n]*)(>?)}) {|m| ALLOWED_TAGS.include?($2) ? "<#{$1}#{$3}" : "&lt;#{$1}#{'&gt;' unless $3.blank?}" }
     end

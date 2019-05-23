@@ -244,7 +244,6 @@ sub RedmineDSN {
               WHERE 
                 users.login=? 
                 AND projects.identifier=?
-                AND EXISTS (SELECT 1 FROM enabled_modules em WHERE em.project_id = projects.id AND em.name = 'repository')
                 AND users.type='User'
                 AND users.status=1 
                 AND (
@@ -391,9 +390,7 @@ sub is_public_project {
 
     my $dbh = connect_database($r);
     my $sth = $dbh->prepare(
-        "SELECT is_public FROM projects
-          WHERE projects.identifier = ? AND projects.status <> 9
-          AND EXISTS (SELECT 1 FROM enabled_modules em WHERE em.project_id = projects.id AND em.name = 'repository');"
+        "SELECT is_public FROM projects WHERE projects.identifier = ? AND projects.status <> 9;"
     );
 
     $sth->execute($project_id);

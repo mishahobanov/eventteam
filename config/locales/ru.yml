@@ -206,7 +206,7 @@ ru:
         not_same_project: "не относится к одному проекту"
         circular_dependency: "Такая связь приведет к циклической зависимости"
         cant_link_an_issue_with_a_descendant: "Задача не может быть связана со своей подзадачей"
-        earlier_than_minimum_start_date: "не может быть раньше %{date} из-за предыдущих задач"
+        earlier_than_minimum_start_date: "cannot be earlier than %{date} because of preceding issues"
 
   support:
     array:
@@ -1282,5 +1282,4 @@ ru:
   setting_attachment_extensions_denied: Запрещённые расширения
   label_any_open_issues: любые открытые задачи
   label_no_open_issues: нет открытых задач
-  label_default_values_for_new_users: Значения по умолчанию для новых пользователей
-  error_cannot_reassign_time_entries_to_an_issue_about_to_be_deleted: Затраченное время не может быть переназначено на задачу, которая будет удалена
+  label_default_values_for_new_users: Default values for new users

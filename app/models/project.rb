@@ -197,9 +197,7 @@ class Project < ActiveRecord::Base
         if role.allowed_to?(permission)
           s = "#{Project.table_name}.is_public = #{connection.quoted_true}"
           if user.id
-            group = role.anonymous? ? Group.anonymous : Group.non_member
-            principal_ids = [user.id, group.id].compact
-            s = "(#{s} AND #{Project.table_name}.id NOT IN (SELECT project_id FROM #{Member.table_name} WHERE user_id IN (#{principal_ids.join(',')})))"
+            s = "(#{s} AND #{Project.table_name}.id NOT IN (SELECT project_id FROM #{Member.table_name} WHERE user_id = #{user.id}))"
           end
           statement_by_role[role] = s
         end
@@ -350,10 +348,6 @@ class Project < ActiveRecord::Base
     self.status == STATUS_ACTIVE
   end
 
-  def closed?
-    self.status == STATUS_CLOSED
-  end
-
   def archived?
     self.status == STATUS_ARCHIVED
   end
@@ -381,12 +375,8 @@ class Project < ActiveRecord::Base
   # Unarchives the project
   # All its ancestors must be active
   def unarchive
-    return false if ancestors.detect {|a| a.archived?}
-    new_status = STATUS_ACTIVE
-    if parent
-      new_status = parent.status
-    end
-    update_attribute :status, new_status
+    return false if ancestors.detect {|a| !a.active?}
+    update_attribute :status, STATUS_ACTIVE
   end
 
   def close

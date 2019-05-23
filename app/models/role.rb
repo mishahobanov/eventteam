@@ -221,9 +221,9 @@ private
   end
 
   def self.find_or_create_system_role(builtin, name)
-    role = unscoped.where(:builtin => builtin).first
+    role = where(:builtin => builtin).first
     if role.nil?
-      role = unscoped.create(:name => name, :position => 0) do |r|
+      role = create(:name => name, :position => 0) do |r|
         r.builtin = builtin
       end
       raise "Unable to create the #{name} role." if role.new_record?

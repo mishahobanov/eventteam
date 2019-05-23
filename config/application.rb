@@ -55,7 +55,7 @@ module RedmineApp
     config.middleware.insert_after ActionDispatch::ParamsParser, ActionDispatch::XmlParamsParser
 
     # Sets the Content-Length header on responses with fixed-length bodies
-    config.middleware.insert_after Rack::Sendfile, Rack::ContentLength
+    config.middleware.use Rack::ContentLength
 
     # Verify validity of user sessions
     config.redmine_verify_sessions = true

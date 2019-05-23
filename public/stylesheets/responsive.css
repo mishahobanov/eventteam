@@ -25,7 +25,7 @@
   add first breakpoint here and start adding responsiveness
 */
 
-@media screen and (max-width: 899px)
+@media all and (max-width: 899px)
 {
   /*----------------------------------------*\
     A) BASIC MOBILE RESETS
@@ -663,46 +663,6 @@
   div#version-summary {float:none; width:100%; margin-left:0;}
   body.controller-versions.action-show div#roadmap .related-issues {width:100%;}
 
-  /* History and Changeset */
-  div#issue-changesets {
-    float: none;
-    width: auto;
-    margin-left: 0;
-    padding-left: 0;
-    margin-bottom: 2em;
-  }
-
-  div#issue-changesets div.changeset {
-    padding-top: 1em;
-  }
-
-  /* Gantt charts */
-  /*
-   * [1] override inline styles with important
-   * [2] keep border between subjects and gantt area
-   * [3] remove whitespace between subjects and gantt area
-   * [4] maintain width due to [3]
-   */
-  .gantt_subjects_column {
-    width: 60% !important; /* [1] */
-  }
-
-  .gantt_subjects_container {
-    width: 100% !important;
-    overflow: hidden;
-  }
-
-  .gantt_subjects_column .gantt_hdr {
-    width: 100% !important;
-    border-right: 1px solid #c0c0c0; /* [2] */
-    right: 0 !important; /* [2] */
-  }
-
-  #gantt_area {
-    left: -2px; /* [3] */
-    margin-right: -2px; /* [4] */
-  }
-
   /*----------------------------------------*\
     G) FORMS
   \*----------------------------------------*/
@@ -766,7 +726,6 @@
 
   #issue_tree .issue > td.subject, #relations .issue > td.subject {
     width: 100% !important; /* let subject have one full width column */
-    word-break: break-word; /* break word if subject is too long */
   }
 
   #issue_tree .issue > td:not(.checkbox), #relations .issue > td:not(.checkbox) {
